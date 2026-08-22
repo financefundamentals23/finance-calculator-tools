@@ -142,7 +142,7 @@ function renderResults(showErrors){
   }
 
   const { P, S, E, I, D, M, T } = values;
-  const numerator = (S - 6*E) + (I - E - D - M) * T;
+  const numerator = Math.max(0, S - 6*E) + (I - E - D - M) * T;
   const resultBox = document.getElementById('result');
   const aiNumber = document.getElementById('aiNumber');
   const badge = document.getElementById('aiBadge');

@@ -44,11 +44,14 @@ relative path (`href="styles.css"`, `src="script.js"`).
 
 Formula:
 ```
-AI = [(S − 6E) + (I − E − D − M) × T] / P
+AI = [max(0, S − 6E) + (I − E − D − M) × T] / P
 ```
 Where `P` = purchase price, `S` = liquid savings, `E` = essential monthly expenses,
 `I` = monthly take-home income, `D` = existing monthly debt payments, `M` = monthly
-savings/investment target, `T` = purchase horizon in months.
+savings/investment target, `T` = purchase horizon in months. The `max(0, S − 6E)` term
+("Safe Savings") is floored at zero — savings below the 6-month emergency-fund target
+count as zero toward the purchase, not negative. This matches the recommendation engine's
+own `affordability_ratio` below, so the two numbers no longer diverge.
 
 Classification:
 | AI range | Meaning |
@@ -72,8 +75,8 @@ required (red border + inline error message if empty on Calculate click).
 Only triggers when category is **"Barely / Moderately Affordable"** or **"Not Affordable"**.
 No recommendation shown for Affordable / Comfortable / Very Comfortable.
 
-Computes its own affordability check (slightly different from the AI formula above — floors
-the savings buffer at zero via `max(0, S − 6E)`):
+Computes its own affordability check, using the same `max(0, S − 6E)` floor as the AI formula
+above:
 ```
 affordability_ratio = [max(0, S − 6E) + (I − E − D − M) × T] / P
 ```
@@ -102,6 +105,6 @@ that triggered it, with pass/fail icons and current value vs. healthy benchmark.
 
 - Number formatting uses standard 3-digit commas (`1,500,000`), not Indian lakh/crore
   grouping (`15,00,000`) — this was flagged as an open question, not yet changed.
-- The AI formula's `(S − 6E)` term is allowed to go negative; the recommendation engine's
-  own `affordability_ratio` floors it at zero — this is intentional per the recommendation
-  algorithm spec, not a bug, even though it means the two numbers can diverge slightly.
+- The AI formula's Safe Savings term is `max(0, S − 6E)`, floored at zero, matching the
+  recommendation engine's `affordability_ratio` — someone with savings below their 6-month
+  emergency-fund target has zero (not negative) available for the purchase.
