@@ -777,3 +777,81 @@
   }
   td.range{font-family:var(--font-mono); color:var(--accent-text); font-weight:600;}
   tr.hl td{background:rgba(92,182,249,0.06);}
+
+  /* ---------- Feedback widget (reusable across tools) ---------- */
+  .feedback-widget{
+    position:fixed;
+    right:24px;
+    bottom:24px;
+    z-index:70;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:12px;
+  }
+  .feedback-bubble{
+    position:relative;
+    max-width:260px;
+    padding:14px 18px;
+    background:var(--sky-400);
+    color:var(--brand-dark);
+    font-size:14.5px;
+    font-weight:500;
+    line-height:1.4;
+    border-radius:16px;
+    text-align:center;
+    text-decoration:none;
+    cursor:pointer;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(8px);
+    transition:opacity 0.3s ease, transform 0.3s ease, visibility 0.3s, background-color 0.15s, box-shadow 0.15s;
+    pointer-events:none;
+  }
+  .feedback-bubble.show{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
+    pointer-events:auto;
+  }
+  .feedback-bubble:hover{
+    background:var(--sky-300);
+    box-shadow:0 6px 16px rgba(0,0,0,0.2);
+  }
+  .feedback-bubble::after{
+    content:"";
+    position:absolute;
+    right:14px;
+    bottom:-9px;
+    width:0;
+    height:0;
+    border-left:9px solid transparent;
+    border-right:9px solid transparent;
+    border-top:9px solid var(--sky-400);
+    transition:border-top-color 0.15s;
+  }
+  .feedback-bubble:hover::after{border-top-color:var(--sky-300);}
+  .feedback-icon{
+    width:52px;
+    height:52px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:var(--sky-400);
+    color:var(--brand-dark);
+    border:none;
+    font-family:inherit;
+    font-size:20px;
+    line-height:1;
+    padding:0;
+    text-decoration:none;
+    cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,0.25);
+    transition:background-color 0.15s, transform 0.15s;
+  }
+  .feedback-icon:hover{background:var(--sky-300); transform:scale(1.06);}
+
+  @media (max-width: 860px){
+    .feedback-widget{right:16px; bottom:96px;}
+  }
