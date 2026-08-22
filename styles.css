@@ -387,15 +387,16 @@
     justify-content:center;
     gap:16px;
     font-family:var(--font-mono);
-    font-size:24px;
+    font-size:17px;
     font-weight:600;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
     padding:20px 0;
     max-width:100%;
+    overflow-x:auto;
   }
 
   @media (max-width: 480px){
-    .formula{font-size:19px;}
+    .formula{font-size:15px;}
   }
 
   .frac{
@@ -408,12 +409,11 @@
   }
   .frac .num, .frac .den{
     padding:2px 10px;
+    white-space:nowrap;
   }
   .frac .num{
     border-bottom:2px solid var(--sky-400);
     padding-bottom:6px;
-    white-space:normal;
-    word-break:break-word;
   }
   .frac .den{
     padding-top:6px;
