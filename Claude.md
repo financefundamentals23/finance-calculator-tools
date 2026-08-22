@@ -7,12 +7,16 @@ everything from scratch.
 ## File structure
 
 ```
-/index.html    — markup only, links to the two files below
-/styles.css    — all styling
-/script.js     — all calculator + recommendation logic
+/index.html         — landing page (hero + CTA into the calculator)
+/calculators.html   — the calculator app (formula switcher + Affordability Index today;
+                       future formulas join the same page/nav, per the design language below)
+/styles.css         — all styling, shared by both pages
+/script.js          — all calculator + recommendation logic, shared by both pages
 ```
-All three files must stay in the same folder — `index.html` references the other two by
-relative path (`href="styles.css"`, `src="script.js"`).
+All files must stay in the same folder — both HTML pages reference `styles.css`/`script.js`
+by relative path. `script.js` is written to be safe to include on pages that don't have every
+element it looks for (e.g. `index.html` has no calculator form), so it no-ops harmlessly
+where markup is missing rather than erroring.
 
 ## Brand identity
 
@@ -29,14 +33,20 @@ relative path (`href="styles.css"`, `src="script.js"`).
   requested; earlier iterations had a "duplicate offset shadow" look that was rejected).
 - Active/highlighted states (active nav item, the featured formula card) use a **solid accent
   fill** (`#5cb6f9` background with dark navy text), not just a border or shadow.
-- **Light mode / dark mode toggle**, top of sidebar. Dark mode uses the original dark navy
-  palette; light mode swaps to light backgrounds with dark text. A themed `--accent-text`
-  CSS variable keeps light-blue accent text readable in both modes (light blue in dark mode,
-  dark navy in light mode) instead of staying a fixed light blue that washes out on white.
-- **Collapsible sidebar** on desktop (icon-only rail when collapsed).
-- **Mobile (<860px):** sidebar is replaced entirely by a fixed bottom nav bar (not just
-  resized) — the sidebar previously had `height:100vh` unconditionally, which broke mobile
-  layout; this is now handled by hiding it and showing `.bottom-nav` instead.
+- **Light mode / dark mode toggle**, in the top nav on every page. Dark mode uses the original
+  dark navy palette; light mode swaps to light backgrounds with dark text. A themed
+  `--accent-text` CSS variable keeps light-blue accent text readable in both modes (light blue
+  in dark mode, dark navy in light mode) instead of staying a fixed light blue that washes out
+  on white. Theme choice persists via `localStorage` (see `applyThemeUI`/`toggleTheme` in
+  `script.js`), restored via an inline pre-paint `<script>` in each page's `<head>` so there's
+  no flash of the wrong theme on load.
+- **Horizontal top nav** (`.topnav`), shared markup/CSS across both pages: brand mark left,
+  site-level links (Home / Finance Calculator) center, theme toggle right. On
+  `calculators.html`, a second horizontal bar below it (`.formula-bar`) switches between
+  calculator formulas — this replaced an earlier collapsible left sidebar, dropped in favor of
+  consistent horizontal nav across the whole site.
+- **Mobile (<860px):** `.formula-bar` hides; a fixed bottom nav bar (`.bottom-nav`) takes over
+  formula-switching + theme toggle instead. The top nav itself stays visible at all sizes.
 - All theme-driven colors (backgrounds, borders, text) transition smoothly (~0.3s) when
   toggling light/dark, via a universal CSS transition rule.
 

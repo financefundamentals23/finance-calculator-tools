@@ -282,19 +282,12 @@ document.querySelectorAll('.num-input').forEach(input => {
   });
 });
 
-// Sidebar collapse
-function toggleSidebar(){
-  const shell = document.querySelector('.shell');
-  shell.classList.toggle('collapsed');
-  const collapsed = shell.classList.contains('collapsed');
-  const btn = document.getElementById('collapseBtn');
-  btn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
-}
-
 // Theme toggle
 function applyThemeUI(theme){
-  document.getElementById('themeIcon').className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-  document.getElementById('themeLabel').textContent = theme === 'light' ? 'Light mode' : 'Dark mode';
+  const icon = document.getElementById('themeIcon');
+  if(icon){ icon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
+  const label = document.getElementById('themeLabel');
+  if(label){ label.textContent = theme === 'light' ? 'Light mode' : 'Dark mode'; }
   const bnIcon = document.getElementById('bnThemeIcon');
   if(bnIcon){ bnIcon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
 }

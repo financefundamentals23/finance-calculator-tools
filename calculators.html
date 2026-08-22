@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Calculator — Affordability Index</title>
+<script>
+  var savedTheme = localStorage.getItem('theme');
+  if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
+</script>
+<link rel="icon" type="image/svg+xml" href="ff-logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell">
+
+  <header class="topnav">
+    <a class="brand" href="index.html">
+      <div class="mark">
+        <span class="big">F</span>
+        <span class="small">f</span>
+      </div>
+      <div class="brand-text">
+        <span class="name">Finance Fundamentals</span>
+      </div>
+    </a>
+
+    <ul class="topnav-links">
+      <li><a class="topnav-link" href="index.html">Home</a></li>
+      <li><a class="topnav-link active" href="calculators.html">Finance Calculator</a></li>
+    </ul>
+
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+      <i class="fa-solid fa-moon" id="themeIcon"></i>
+      <span id="themeLabel">Dark mode</span>
+    </button>
+  </header>
+
+  <nav class="formula-bar">
+    <ul class="nav-list">
+      <li class="nav-item active" title="Affordability Index">
+        <span class="nav-icon">A</span>
+        <span class="nav-text">Affordability Index</span>
+      </li>
+      <li class="nav-item" title="Emergency Fund Ratio">
+        <span class="nav-icon">E</span>
+        <span class="nav-text">Emergency Fund Ratio</span>
+        <span class="soon">coming soon</span>
+      </li>
+    </ul>
+  </nav>
+
+  <main class="calculator-main">
+    <h1>Affordability Index</h1>
+    <p class="lede">A single number that tells you whether a purchase fits your finances</p>
+
+    <div class="card-grid">
+    <div class="card signature">
+      <h2>The Formula</h2>
+
+      <div class="formula-sub-label">The Fundamental Idea</div>
+      <div class="formula">
+        <span>AI&nbsp;=</span>
+        <div class="frac">
+          <span class="num">Safe Savings + (Monthly Surplus × T)</span>
+          <span class="den">Purchase Price</span>
+        </div>
+      </div>
+      <p class="threshold-note">Where <strong>Safe Savings</strong> = max(0, S − 6E) and <strong>Monthly Surplus</strong> = I − E − D − M </p>
+
+      <div class="formula-divider"></div>
+      <div class="formula-sub-label">The Detailed Formula</div>
+      <div class="formula">
+        <span>AI&nbsp;=</span>
+        <div class="frac">
+          <span class="num">max(0, S − 6E) + (I − E − D − M)T</span>
+          <span class="den">P</span>
+        </div>
+      </div>
+
+      <div class="var-grid">
+        <div class="var-row"><span class="sym">P</span> Purchase price</div>
+        <div class="var-row"><span class="sym">S</span> Liquid savings</div>
+        <div class="var-row"><span class="sym">E</span> Essential monthly expenses</div>
+        <div class="var-row"><span class="sym">I</span> Monthly take-home income</div>
+        <div class="var-row"><span class="sym">D</span> Existing monthly debt payments</div>
+        <div class="var-row"><span class="sym">M</span> Monthly savings / investment target</div>
+        <div class="var-row"><span class="sym">T</span> Purchase horizon, in months</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Calculate Your Score</h2>
+      <div class="field-grid">
+        <div class="field" id="field-P">
+          <label for="P">Purchase price (P)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="P" placeholder="e.g. 15,00,000">
+          <span class="error-msg">This field is required</span>
+        </div>
+        <div class="field" id="field-S">
+          <label for="S">Liquid savings (S)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="S" placeholder="e.g. 6,00,000">
+          <span class="error-msg">This field is required</span>
+        </div>
+        <div class="field" id="field-E">
+          <label for="E">Essential monthly expenses (E)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="E" placeholder="e.g. 40,000">
+          <span class="error-msg">This field is required</span>
+        </div>
+        <div class="field" id="field-I">
+          <label for="I">Monthly take-home income (I)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="I" placeholder="e.g. 1,20,000">
+          <span class="error-msg">This field is required</span>
+        </div>
+        <div class="field" id="field-D">
+          <label for="D">Existing monthly debt payments (D)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="D" placeholder="e.g. 15,000">
+          <span class="error-msg">This field is required</span>
+        </div>
+        <div class="field" id="field-M">
+          <label for="M">Monthly savings / investment target (M)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="M" placeholder="e.g. 20,000">
+          <span class="error-msg">This field is required</span>
+        </div>
+        <div class="field" id="field-T">
+          <label for="T">Purchase horizon, months (T)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="T" placeholder="e.g. 12">
+          <span class="error-msg">This field is required</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="calc" onclick="calculate()">Calculate</button>
+        <button class="reset" onclick="resetForm()">Reset</button>
+      </div>
+
+      <div class="result" id="result">
+        <div class="result-top">
+          <div class="ai-value">
+            <span class="label">Affordability Index</span>
+            <span id="aiNumber">—</span>
+          </div>
+          <span class="badge" id="aiBadge"><span class="dot"></span><span id="aiBadgeText">—</span></span>
+        </div>
+        <div class="threshold-note" id="thresholdNote"></div>
+
+        <div class="recommendation" id="recommendation">
+          <div class="rec-label">Recommendation</div>
+          <p class="rec-text" id="recText"></p>
+
+          <div class="rec-checklist-label">Financial Health Snapshot</div>
+          <div class="rec-checklist" id="recChecklist">
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon" id="check-emergency-icon"></span>
+                <span class="rec-check-name">Emergency Fund</span>
+              </div>
+              <span class="rec-check-value" id="check-emergency-value"></span>
+            </div>
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon" id="check-debt-icon"></span>
+                <span class="rec-check-name">Debt-to-Income</span>
+              </div>
+              <span class="rec-check-value" id="check-debt-value"></span>
+            </div>
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon" id="check-expense-icon"></span>
+                <span class="rec-check-name">Essential Expenses</span>
+              </div>
+              <span class="rec-check-value" id="check-expense-value"></span>
+            </div>
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon" id="check-savings-icon"></span>
+                <span class="rec-check-name">Savings Rate</span>
+              </div>
+              <span class="rec-check-value" id="check-savings-value"></span>
+            </div>
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon" id="check-fcf-icon"></span>
+                <span class="rec-check-name">Free Cash Flow</span>
+              </div>
+              <span class="rec-check-value" id="check-fcf-value"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>How To Read The Score</h2>
+      <table>
+        <thead>
+          <tr><th>AI Range</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="range">&lt; 0</td><td>Cannot afford</td></tr>
+          <tr><td class="range">0 – 1</td><td>Not comfortably affordable</td></tr>
+          <tr><td class="range">1 – 2</td><td>Barely / moderately affordable</td></tr>
+          <tr class="hl"><td class="range">2 – 3</td><td>Affordable — the practical threshold</td></tr>
+          <tr><td class="range">3 – 5</td><td>Comfortable</td></tr>
+          <tr><td class="range">5+</td><td>Very comfortable</td></tr>
+        </tbody>
+      </table>
+      <p class="threshold-note">The crucial cutoff is <strong>AI ≥ 2</strong> — that's the working definition of "financially affordable" used throughout this tool.</p>
+    </div>
+    </div>
+  </main>
+</div>
+
+<div class="feedback-widget" id="feedbackWidget">
+  <a class="feedback-bubble" id="feedbackBubble" href="mailto:finance.fundamentals23@gmail.com?subject=Feedback%20on%20Finance%20Calculator" title="Email your feedback">Got a minute? I'd love to hear your feedback on this tool.</a>
+  <button type="button" class="feedback-icon" title="Feedback" onclick="toggleFeedbackWidget()"><i class="fa-solid fa-envelope"></i></button>
+</div>
+
+<nav class="bottom-nav">
+  <button class="bn-item active" title="Affordability Index">
+    <span class="bn-icon">A</span>
+    Afford. Index
+  </button>
+  <button class="bn-item" disabled title="Emergency Fund Ratio — coming soon">
+    <span class="bn-icon">E</span>
+    Emergency
+  </button>
+  <button class="bn-item" onclick="toggleTheme()" title="Toggle theme">
+    <span class="bn-icon"><i class="fa-solid fa-moon" id="bnThemeIcon"></i></span>
+    Theme
+  </button>
+</nav>
+
+<script src="script.js"></script>
+</body>
+</html>
