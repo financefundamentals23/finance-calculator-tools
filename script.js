@@ -265,13 +265,22 @@ function toggleSidebar(){
 }
 
 // Theme toggle
+function applyThemeUI(theme){
+  document.getElementById('themeIcon').className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+  document.getElementById('themeLabel').textContent = theme === 'light' ? 'Light mode' : 'Dark mode';
+  const bnIcon = document.getElementById('bnThemeIcon');
+  if(bnIcon){ bnIcon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
+}
+
 function toggleTheme(){
   const html = document.documentElement;
   const isLight = html.getAttribute('data-theme') === 'light';
   const next = isLight ? 'dark' : 'light';
   html.setAttribute('data-theme', next);
-  document.getElementById('themeIcon').textContent = next === 'light' ? '☀️' : '🌙';
-  document.getElementById('themeLabel').textContent = next === 'light' ? 'Light mode' : 'Dark mode';
-  const bnIcon = document.getElementById('bnThemeIcon');
-  if(bnIcon){ bnIcon.textContent = next === 'light' ? '☀️' : '🌙'; }
+  localStorage.setItem('theme', next);
+  applyThemeUI(next);
 }
+
+document.addEventListener('DOMContentLoaded', function(){
+  applyThemeUI(document.documentElement.getAttribute('data-theme'));
+});

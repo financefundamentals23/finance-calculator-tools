@@ -4,9 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finance Calculator — Affordability Index</title>
+<script>
+  var savedTheme = localStorage.getItem('theme');
+  if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
+</script>
 <link rel="icon" type="image/svg+xml" href="ff-logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -28,7 +33,7 @@
     </div>
 
     <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
-      <span id="themeIcon">🌙</span>
+      <i class="fa-solid fa-moon" id="themeIcon"></i>
       <span id="themeLabel">Dark mode</span>
     </button>
 
@@ -58,6 +63,19 @@
 
     <div class="card signature">
       <h2>The Formula</h2>
+
+      <div class="formula-sub-label">The Fundamental Idea</div>
+      <div class="formula">
+        <span>AI&nbsp;=</span>
+        <div class="frac">
+          <span class="num">Safe Savings + (Monthly Surplus × T)</span>
+          <span class="den">Purchase Price</span>
+        </div>
+      </div>
+      <p class="threshold-note">Where <strong>Safe Savings</strong> = S − 6E and <strong>Monthly Surplus</strong> = I − E − D − M </p>
+
+      <div class="formula-divider"></div>
+      <div class="formula-sub-label">The Detailed Formula</div>
       <div class="formula">
         <span>AI&nbsp;=</span>
         <div class="frac">
@@ -208,7 +226,7 @@
     Emergency
   </button>
   <button class="bn-item" onclick="toggleTheme()" title="Toggle theme">
-    <span class="bn-icon" id="bnThemeIcon">🌙</span>
+    <span class="bn-icon"><i class="fa-solid fa-moon" id="bnThemeIcon"></i></span>
     Theme
   </button>
 </nav>

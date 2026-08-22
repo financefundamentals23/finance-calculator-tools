@@ -90,14 +90,18 @@
     background:var(--navy-700);
     border:1px solid var(--navy-600);
     color:var(--ink-300);
-    width:24px;
-    height:24px;
+    width:32px;
+    height:32px;
+    padding:0;
     border-radius:50%;
     display:flex;
     align-items:center;
     justify-content:center;
     cursor:pointer;
-    font-size:13px;
+    font-family:inherit;
+    font-size:20px;
+    font-weight:700;
+    line-height:1;
     flex-shrink:0;
     transition:border-color 0.15s, color 0.15s, background-color 0.3s ease;
   }
@@ -120,6 +124,7 @@
     font-family:var(--font-mono);
     font-size:13px;
     font-weight:700;
+    line-height:1;
     color:var(--accent-text);
     flex-shrink:0;
   }
@@ -139,7 +144,7 @@
   .shell.collapsed .sidebar-footer{
     display:none;
   }
-  .shell.collapsed .nav-item{justify-content:center; padding:11px 0;}
+  .shell.collapsed .nav-item{justify-content:center; padding:13px 0 9px;}
   .shell.collapsed .nav-icon{display:flex;}
   .shell.collapsed .theme-toggle{padding:9px; justify-content:center;}
   .shell.collapsed .collapse-btn{transform:rotate(180deg);}
@@ -374,6 +379,10 @@
   .card.signature .frac .num{border-bottom-color:var(--brand-dark);}
   .card.signature .var-row{color:var(--brand-dark); opacity:0.85;}
   .card.signature .var-row .sym{color:var(--brand-dark);}
+  .card.signature .formula-divider{background:rgba(19,33,53,0.25);}
+  .card.signature .formula-sub-label{color:var(--brand-dark); opacity:0.75;}
+  .card.signature .threshold-note{color:var(--brand-dark); opacity:0.85;}
+  .card.signature .threshold-note strong{color:var(--brand-dark); opacity:1;}
 
   .card h2{
     font-family:var(--font-display);
@@ -448,6 +457,22 @@
     min-width:18px;
   }
 
+  .formula-divider{
+    height:1px;
+    background:var(--navy-600);
+    margin:28px auto 0;
+    max-width:560px;
+  }
+  .formula-sub-label{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--ink-300);
+    text-align:center;
+    margin-top:20px;
+  }
+
   /* Calculator */
   .field-grid{
     display:grid;
@@ -488,6 +513,7 @@
     box-shadow:0 0 0 3px rgba(92,182,249,0.18);
   }
   .field input::placeholder{color:var(--placeholder-grey);}
+  .field input:focus::placeholder{color:transparent;}
 
   .field.error input{
     border-color:var(--red);
