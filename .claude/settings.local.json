@@ -4,7 +4,8 @@
       "Bash(python3 -)",
       "Bash(node /tmp/dvcheck/validate_palette.js \"#5cb6f9\" --mode light --surface \"#ffffff\")",
       "Bash(node /tmp/dvcheck/validate_palette.js \"#ef6a5f\" --mode dark --surface \"#182943\")",
-      "Bash(node /tmp/dvcheck/validate_palette.js \"#ef6a5f\" --mode light --surface \"#ffffff\")"
+      "Bash(node /tmp/dvcheck/validate_palette.js \"#ef6a5f\" --mode light --surface \"#ffffff\")",
+      "Bash(grep -n \"Calculate Your Score\\\\|id=\\\\\"result\\\\\"\\\\|How To Read The Score\\\\|</div>\\\\s*$\" /Users/rohiths/finance-fundamentals-git-repos/finance-calculator-tools/calculators.html)"
     ]
   }
 }

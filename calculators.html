@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css?v=26">
+<link rel="stylesheet" href="styles.css?v=30">
 </head>
 <body>
 <div class="shell">
@@ -202,61 +202,6 @@
         <button class="calc" id="calculateBtn" onclick="calculate()">Calculate</button>
         <button class="reset" onclick="resetForm()">Reset</button>
       </div>
-
-      <div class="result" id="result">
-        <div class="result-top">
-          <div class="ai-value">
-            <span class="label">Affordability Index</span>
-            <span id="aiNumber">—</span>
-          </div>
-          <span class="badge" id="aiBadge"><span class="dot"></span><span id="aiBadgeText">—</span></span>
-        </div>
-        <div class="threshold-note" id="thresholdNote"></div>
-
-        <div class="recommendation" id="recommendation">
-          <div class="rec-label">Recommendation</div>
-          <p class="rec-text" id="recText"></p>
-
-          <div class="rec-checklist-label">Financial Health Snapshot</div>
-          <div class="rec-checklist" id="recChecklist">
-            <div class="rec-check-row">
-              <div class="rec-check-left">
-                <span class="rec-check-icon" id="check-emergency-icon"></span>
-                <span class="rec-check-name">Emergency Fund</span>
-              </div>
-              <span class="rec-check-value" id="check-emergency-value"></span>
-            </div>
-            <div class="rec-check-row">
-              <div class="rec-check-left">
-                <span class="rec-check-icon" id="check-debt-icon"></span>
-                <span class="rec-check-name">Debt-to-Income</span>
-              </div>
-              <span class="rec-check-value" id="check-debt-value"></span>
-            </div>
-            <div class="rec-check-row">
-              <div class="rec-check-left">
-                <span class="rec-check-icon" id="check-expense-icon"></span>
-                <span class="rec-check-name">Essential Expenses</span>
-              </div>
-              <span class="rec-check-value" id="check-expense-value"></span>
-            </div>
-            <div class="rec-check-row">
-              <div class="rec-check-left">
-                <span class="rec-check-icon" id="check-savings-icon"></span>
-                <span class="rec-check-name">Savings Rate</span>
-              </div>
-              <span class="rec-check-value" id="check-savings-value"></span>
-            </div>
-            <div class="rec-check-row">
-              <div class="rec-check-left">
-                <span class="rec-check-icon" id="check-fcf-icon"></span>
-                <span class="rec-check-name">Free Cash Flow</span>
-              </div>
-              <span class="rec-check-value" id="check-fcf-value"></span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="card">
@@ -275,6 +220,62 @@
         </tbody>
       </table>
       <p class="threshold-note">The crucial cutoff is <strong>AI ≥ 2</strong> — that's the working definition of "financially affordable" used throughout this tool.</p>
+    </div>
+
+    <div class="card result" id="result">
+      <h2>Your Score</h2>
+      <div class="result-top">
+        <div class="ai-value">
+          <span class="label">Affordability Index</span>
+          <span id="aiNumber">—</span>
+        </div>
+        <span class="badge" id="aiBadge"><span class="dot"></span><span id="aiBadgeText">—</span></span>
+      </div>
+      <div class="threshold-note" id="thresholdNote"></div>
+
+      <div class="recommendation" id="recommendation">
+        <div class="rec-label">Recommendation</div>
+        <p class="rec-text" id="recText"></p>
+
+        <div class="rec-checklist-label">Financial Health Snapshot</div>
+        <div class="rec-checklist" id="recChecklist">
+          <div class="rec-check-row">
+            <div class="rec-check-left">
+              <span class="rec-check-icon" id="check-emergency-icon"></span>
+              <span class="rec-check-name">Emergency Fund</span>
+            </div>
+            <span class="rec-check-value" id="check-emergency-value"></span>
+          </div>
+          <div class="rec-check-row">
+            <div class="rec-check-left">
+              <span class="rec-check-icon" id="check-debt-icon"></span>
+              <span class="rec-check-name">Debt-to-Income</span>
+            </div>
+            <span class="rec-check-value" id="check-debt-value"></span>
+          </div>
+          <div class="rec-check-row">
+            <div class="rec-check-left">
+              <span class="rec-check-icon" id="check-expense-icon"></span>
+              <span class="rec-check-name">Essential Expenses</span>
+            </div>
+            <span class="rec-check-value" id="check-expense-value"></span>
+          </div>
+          <div class="rec-check-row">
+            <div class="rec-check-left">
+              <span class="rec-check-icon" id="check-savings-icon"></span>
+              <span class="rec-check-name">Savings Rate</span>
+            </div>
+            <span class="rec-check-value" id="check-savings-value"></span>
+          </div>
+          <div class="rec-check-row">
+            <div class="rec-check-left">
+              <span class="rec-check-icon" id="check-fcf-icon"></span>
+              <span class="rec-check-name">Free Cash Flow</span>
+            </div>
+            <span class="rec-check-value" id="check-fcf-value"></span>
+          </div>
+        </div>
+      </div>
     </div>
     </div>
 
@@ -327,6 +328,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="firebase-auth.js?v=7"></script>
-<script src="script.js?v=20"></script>
+<script src="script.js?v=21"></script>
 </body>
 </html>

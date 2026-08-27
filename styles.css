@@ -540,13 +540,20 @@
   }
 
   .card-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(380px, 1fr));
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:stretch;
     gap:28px;
-    align-items:start;
   }
   .card-grid > .card{
+    flex:1 1 380px;
+    max-width:700px;
     margin-bottom:0;
+  }
+  .card-grid > .card.result{
+    flex-basis:100%;
+    max-width:100%;
   }
 
   @media (max-width: 640px){
@@ -1507,9 +1514,6 @@
   /* Result */
   .result{
     display:none;
-    margin-top:28px;
-    padding-top:28px;
-    border-top:1px solid var(--navy-600);
   }
   .result.show{display:block;}
 

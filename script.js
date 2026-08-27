@@ -1,8 +1,7 @@
 // Feedback widget — the icon is always visible; these reveal/hide the
-// message bubble, on icon click, on a successful calculation, or on an
-// outside click. Reusable across future tools: each tool's page just needs
-// the same #feedbackWidget/#feedbackBubble markup + CSS, and to call
-// showFeedbackWidget() at its own success point.
+// message bubble, on icon click or on an outside click. Reusable across
+// future tools: each tool's page just needs the same #feedbackWidget/
+// #feedbackBubble markup + CSS.
 function showFeedbackWidget(){
   const bubble = document.getElementById('feedbackBubble');
   if(bubble) bubble.classList.add('show');
@@ -333,8 +332,6 @@ function renderResults(showErrors){
   aiNumber.className = cls;
   badge.className = 'badge ' + cls;
   badgeText.textContent = text;
-
-  showFeedbackWidget();
 
   if(ai >= 2){
     note.innerHTML = 'AI = <strong>' + ai.toFixed(2) + '</strong>, which clears the <strong>AI ≥ 2</strong> threshold — this purchase reads as financially affordable given the inputs above.';
