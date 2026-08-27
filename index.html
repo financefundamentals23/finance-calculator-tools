@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body>
 <div class="shell">
@@ -83,49 +83,164 @@
   <main class="landing-main">
     <div class="eyebrow">Personal finance, worked out properly</div>
     <blockquote class="hero-quote">
-      <p>&ldquo;Investing is not a choice. It's a must.&rdquo;</p>
+      <p id="heroQuoteText"><span id="heroQuoteTyped"></span><span class="typing-cursor"></span></p>
       <cite>— Rohith Surya</cite>
     </blockquote>
 
-    <a class="card signature card-link" href="calculators.html">
-      <h2>Start With The Affordability Index</h2>
-      <p class="lede">Enter your income, expenses, debt, and savings goals against
-        a purchase price, and get a classified score — from "Cannot afford" to "Very comfortable"
-        — plus a personalized recommendation if it's not there yet.</p>
-    </a>
-
     <section class="landing-section">
       <div class="eyebrow">Why Finance Fundamentals</div>
-      <h2 class="section-title">Everything you need to make the call</h2>
-      <p class="section-lede">No spreadsheets, no guesswork — just the numbers that actually
-        decide whether a purchase makes sense.</p>
+      <h2 class="section-title">Money deserves better education</h2>
+      <p class="section-lede mission-lede">We wanted to make financial literacy easy and accessible to
+        everyone around the world. Whether we like it or not, <strong>money is a part of
+        everyone's life</strong> — yet our education system rarely teaches us how to understand
+        it or make it work for us. We can spend years learning Algebra and Science, but somehow
+        never learn the basics of managing money. Our mission is to help everyday people
+        understand money, make smarter financial decisions, and answer one important question:
+        <strong>How can I make better decisions with my money?</strong></p>
 
-      <div class="feature-grid">
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-gauge-high"></i></div>
-          <h3>A single, classified score</h3>
-          <p>Every input rolls up into one Affordability Index, from "Cannot afford" to
-            "Very comfortable" — no mental math required.</p>
+      <div class="life-chip-row">
+        <div class="life-chip-connector"></div>
+        <div class="life-chip" tabindex="0" data-tooltip="Raising a family — childcare, school, everyday needs.">
+          <span class="life-chip-icon"><i class="fa-solid fa-people-roof"></i></span>Family
         </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-heart-pulse"></i></div>
-          <h3>5-point health snapshot</h3>
-          <p>Emergency fund, debt-to-income, essential expenses, savings rate, and free
-            cash flow — checked automatically against healthy benchmarks.</p>
+        <div class="life-chip" tabindex="0" data-tooltip="Buying or renting, it's usually your biggest expense.">
+          <span class="life-chip-icon"><i class="fa-solid fa-house"></i></span>Home
         </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-comment-dots"></i></div>
-          <h3>Plain-language guidance</h3>
-          <p>When a purchase isn't comfortably affordable yet, you get a specific,
-            prioritized reason why — not just a red number.</p>
+        <div class="life-chip" tabindex="0" data-tooltip="Medical care isn't optional — and it isn't cheap.">
+          <span class="life-chip-icon"><i class="fa-solid fa-heart-pulse"></i></span>Health
         </div>
-        <div class="feature-card">
-          <div class="feature-icon"><i class="fa-solid fa-layer-group"></i></div>
-          <h3>Growing toolset</h3>
-          <p>The Affordability Index is the first calculator. More are joining the same
-            page over time, built with the same standard.</p>
+        <div class="life-chip" tabindex="0" data-tooltip="Learning costs money, at every stage of life.">
+          <span class="life-chip-icon"><i class="fa-solid fa-graduation-cap"></i></span>Education
+        </div>
+        <div class="life-chip" tabindex="0" data-tooltip="Even a well-earned break needs a budget.">
+          <span class="life-chip-icon"><i class="fa-solid fa-plane"></i></span>Travel
+        </div>
+        <div class="life-chip" tabindex="0" data-tooltip="No income doesn't mean no expenses.">
+          <span class="life-chip-icon"><i class="fa-solid fa-umbrella-beach"></i></span>Retirement
         </div>
       </div>
+    </section>
+
+    <section class="landing-section">
+      <div class="eyebrow">Reality check</div>
+      <h2 class="section-title">Why should I invest?</h2>
+      <p class="section-lede">Two numbers explain the whole case — what inflation
+        quietly takes from you, and what happens to your income when you eventually
+        stop working.</p>
+
+      <div class="invest-chart-grid">
+        <div class="invest-chart-card">
+          <h3>Inflation erodes what your money is worth</h3>
+          <p class="invest-chart-sub">Purchasing power of ₹100 today, at 6% average
+            yearly inflation.</p>
+          <div class="chart-canvas" id="chartInflation"
+            role="img"
+            aria-label="Line chart: the purchasing power of 100 rupees today falls to about 17 rupees after 30 years at 6% average inflation.">
+          </div>
+          <table class="sr-only">
+            <caption>Purchasing power of ₹100 today, by year, at 6% average inflation</caption>
+            <thead><tr><th>Years from now</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Now</td><td>₹100</td></tr>
+              <tr><td>5 yr</td><td>₹75</td></tr>
+              <tr><td>10 yr</td><td>₹56</td></tr>
+              <tr><td>15 yr</td><td>₹42</td></tr>
+              <tr><td>20 yr</td><td>₹31</td></tr>
+              <tr><td>25 yr</td><td>₹23</td></tr>
+              <tr><td>30 yr</td><td>₹17</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="invest-chart-card">
+          <h3>Your income won't last as long as you will</h3>
+          <p class="invest-chart-sub">A typical monthly income curve — rising through
+            your career, then stopping at retirement.</p>
+          <div class="chart-canvas" id="chartIncome"
+            role="img"
+            aria-label="Line chart: monthly income rises from age 25 to 60, then drops sharply to near zero after retirement, while life continues for decades after.">
+          </div>
+          <table class="sr-only">
+            <caption>Typical monthly income by age</caption>
+            <thead><tr><th>Age</th><th>Monthly income</th></tr></thead>
+            <tbody>
+              <tr><td>25</td><td>₹50k</td></tr>
+              <tr><td>35</td><td>₹90k</td></tr>
+              <tr><td>45</td><td>₹1.2L</td></tr>
+              <tr><td>55</td><td>₹1.3L</td></tr>
+              <tr><td>60</td><td>₹1.3L</td></tr>
+              <tr><td>61 (retired)</td><td>₹8k</td></tr>
+              <tr><td>70</td><td>₹8k</td></tr>
+              <tr><td>80</td><td>₹8k</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section ai-preview-section">
+      <div class="ai-preview-text">
+        <div class="eyebrow">The Affordability Index</div>
+        <h2 class="section-title">Know exactly what you can afford</h2>
+        <p class="section-lede" style="margin:0 0 24px;">Enter your income, expenses, debt, and
+          savings goals against a purchase price, and get a classified score — from "Cannot
+          afford" to "Very comfortable" — plus a personalized recommendation if it's not
+          there yet.</p>
+        <a class="calc" href="calculators.html">Try the Affordability Index</a>
+      </div>
+
+      <a class="hero-preview" href="calculators.html" id="heroPreview">
+        <div class="hero-preview-chrome">
+          <span class="chrome-dot red"></span>
+          <span class="chrome-dot yellow"></span>
+          <span class="chrome-dot green"></span>
+          <span class="hero-preview-url">financefundamentals.app/calculator</span>
+        </div>
+
+        <div class="hero-preview-body">
+          <div class="hero-preview-score-card">
+            <span class="hero-preview-score-label">Affordability Index</span>
+            <span class="hero-preview-score-value" id="heroPreviewScore">0.00</span>
+            <span class="badge green"><span class="dot"></span>Affordable</span>
+          </div>
+
+          <div class="rec-checklist hero-preview-checklist">
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon pass">✓</span>
+                <span class="rec-check-name">Emergency Fund</span>
+              </div>
+              <span class="rec-check-value">6.2 months</span>
+            </div>
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon pass">✓</span>
+                <span class="rec-check-name">Debt-to-Income</span>
+              </div>
+              <span class="rec-check-value">18%</span>
+            </div>
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon pass">✓</span>
+                <span class="rec-check-name">Savings Rate</span>
+              </div>
+              <span class="rec-check-value">24%</span>
+            </div>
+            <div class="rec-check-row">
+              <div class="rec-check-left">
+                <span class="rec-check-icon fail">✕</span>
+                <span class="rec-check-name">Free Cash Flow</span>
+              </div>
+              <span class="rec-check-value">14%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-preview-footer">
+          <span>Start With The Affordability Index</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </div>
+      </a>
     </section>
 
     <section class="landing-section">
@@ -201,6 +316,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="firebase-auth.js?v=7"></script>
-<script src="script.js?v=12"></script>
+<script src="script.js?v=20"></script>
 </body>
 </html>

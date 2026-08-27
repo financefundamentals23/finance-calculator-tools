@@ -656,6 +656,270 @@ function toggleTheme(){
   applyThemeUI(next);
 }
 
+// Small hand-rolled line/area chart with a hover crosshair + tooltip, keyboard-
+// navigable. `points` is [{label, value}, ...]; opts: valueFormat(v), yMin, yMax,
+// labelIndex (which point gets the direct end-label; defaults to the last),
+// endLabel (override label text), labelAbove (place label above vs below the dot).
+function renderTrendChart(containerId, points, opts){
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  opts = opts || {};
+
+  const W = 440, H = 240, padL = 8, padR = 8, padT = 26, padB = 26;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const values = points.map(function(p){ return p.value; });
+  const yMin = opts.yMin != null ? opts.yMin : 0;
+  const yMax = opts.yMax != null ? opts.yMax : Math.max.apply(null, values);
+  const xStep = plotW / (points.length - 1);
+  const xAt = function(i){ return padL + i * xStep; };
+  const yAt = function(v){ return padT + plotH - ((v - yMin) / (yMax - yMin)) * plotH; };
+
+  const linePts = points.map(function(p, i){ return [xAt(i), yAt(p.value)]; });
+  const lineD = linePts.map(function(pt, i){
+    return (i === 0 ? 'M' : 'L') + pt[0].toFixed(1) + ',' + pt[1].toFixed(1);
+  }).join(' ');
+  const baseline = (padT + plotH).toFixed(1);
+  const areaD = lineD +
+    ' L' + xAt(points.length - 1).toFixed(1) + ',' + baseline +
+    ' L' + xAt(0).toFixed(1) + ',' + baseline + ' Z';
+
+  const gridCount = 4;
+  let gridSvg = '';
+  for(let g = 0; g <= gridCount; g++){
+    const y = (padT + (plotH / gridCount) * g).toFixed(1);
+    gridSvg += '<line class="chart-grid-line" x1="' + padL + '" y1="' + y + '" x2="' + (padL + plotW) + '" y2="' + y + '"/>';
+  }
+
+  const xLabels = points.map(function(p, i){
+    const anchor = i === 0 ? 'start' : (i === points.length - 1 ? 'end' : 'middle');
+    return '<text class="chart-axis-label" x="' + xAt(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="' + anchor + '">' + escapeHtml(p.label) + '</text>';
+  }).join('');
+
+  const endIdx = opts.labelIndex != null ? opts.labelIndex : points.length - 1;
+  const endPt = linePts[endIdx];
+  const endLabelText = opts.endLabel || opts.valueFormat(points[endIdx].value);
+  const labelAbove = opts.labelAbove !== false;
+  const labelY = labelAbove ? endPt[1] - 14 : endPt[1] + 20;
+  const labelAnchor = endIdx === points.length - 1 ? 'end' : (endIdx === 0 ? 'start' : 'middle');
+
+  container.innerHTML =
+    '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" class="trend-chart-svg" tabindex="0" preserveAspectRatio="none">' +
+      '<defs><linearGradient id="' + containerId + '-grad" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="var(--chart-line)" stop-opacity="0.14"/>' +
+        '<stop offset="100%" stop-color="var(--chart-line)" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
+      gridSvg +
+      '<path class="chart-area-path" d="' + areaD + '" fill="url(#' + containerId + '-grad)" stroke="none"/>' +
+      '<path class="chart-line-path" d="' + lineD + '" fill="none" stroke="var(--chart-line)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle class="chart-end-dot" cx="' + endPt[0].toFixed(1) + '" cy="' + endPt[1].toFixed(1) + '" r="4"/>' +
+      '<text class="chart-direct-label" x="' + endPt[0].toFixed(1) + '" y="' + labelY.toFixed(1) + '" text-anchor="' + labelAnchor + '">' + escapeHtml(endLabelText) + '</text>' +
+      xLabels +
+      '<line class="chart-crosshair" x1="0" y1="' + padT + '" x2="0" y2="' + baseline + '" opacity="0"/>' +
+      '<circle class="chart-hover-dot" r="5" opacity="0"/>' +
+    '</svg>' +
+    '<div class="chart-tooltip"></div>';
+
+  const svgEl = container.querySelector('svg');
+  const crosshair = svgEl.querySelector('.chart-crosshair');
+  const hoverDot = svgEl.querySelector('.chart-hover-dot');
+  const tooltip = container.querySelector('.chart-tooltip');
+
+  // Draw-in animation: the line traces itself in, then the area/dot/label
+  // fade in. Replays every time the chart scrolls into view.
+  const drawPath = svgEl.querySelector('.chart-line-path');
+  const drawLen = drawPath.getTotalLength();
+  drawPath.style.strokeDasharray = drawLen;
+
+  function resetDraw(){
+    drawPath.style.transition = 'none';
+    drawPath.style.strokeDashoffset = drawLen;
+    container.classList.remove('in-view');
+  }
+  function playDraw(){
+    drawPath.style.transition = 'none';
+    drawPath.style.strokeDashoffset = drawLen;
+    // force reflow so the next transition actually runs from the reset value
+    drawPath.getBoundingClientRect();
+    drawPath.style.transition = 'stroke-dashoffset 1100ms ease';
+    drawPath.style.strokeDashoffset = '0';
+    container.classList.add('in-view');
+  }
+  resetDraw();
+
+  if('IntersectionObserver' in window){
+    const drawObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting) playDraw();
+        else resetDraw();
+      });
+    }, {threshold: 0.4});
+    drawObserver.observe(container);
+  } else {
+    playDraw();
+  }
+
+  function showAt(i){
+    const pt = linePts[i];
+    crosshair.setAttribute('x1', pt[0]);
+    crosshair.setAttribute('x2', pt[0]);
+    crosshair.setAttribute('opacity', '1');
+    hoverDot.setAttribute('cx', pt[0]);
+    hoverDot.setAttribute('cy', pt[1]);
+    hoverDot.setAttribute('opacity', '1');
+
+    tooltip.innerHTML = '';
+    const valueEl = document.createElement('div');
+    valueEl.className = 'chart-tooltip-value';
+    valueEl.textContent = opts.valueFormat(points[i].value);
+    const labelEl = document.createElement('div');
+    labelEl.className = 'chart-tooltip-label';
+    labelEl.textContent = points[i].label;
+    tooltip.appendChild(valueEl);
+    tooltip.appendChild(labelEl);
+    tooltip.style.opacity = '1';
+    tooltip.style.left = (pt[0] / W * 100) + '%';
+    tooltip.style.top = (pt[1] / H * 100) + '%';
+  }
+  function hide(){
+    crosshair.setAttribute('opacity', '0');
+    hoverDot.setAttribute('opacity', '0');
+    tooltip.style.opacity = '0';
+  }
+
+  svgEl.addEventListener('pointermove', function(e){
+    const rect = svgEl.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width * W;
+    let nearest = 0, best = Infinity;
+    linePts.forEach(function(pt, i){
+      const d = Math.abs(pt[0] - relX);
+      if(d < best){ best = d; nearest = i; }
+    });
+    showAt(nearest);
+  });
+  svgEl.addEventListener('pointerleave', hide);
+
+  let focusIdx = 0;
+  svgEl.addEventListener('focus', function(){ showAt(focusIdx); });
+  svgEl.addEventListener('blur', hide);
+  svgEl.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight'){
+      focusIdx = Math.min(points.length - 1, focusIdx + 1);
+      showAt(focusIdx);
+      e.preventDefault();
+    } else if(e.key === 'ArrowLeft'){
+      focusIdx = Math.max(0, focusIdx - 1);
+      showAt(focusIdx);
+      e.preventDefault();
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   applyThemeUI(document.documentElement.getAttribute('data-theme'));
+
+  // Hero quote typewriter effect (landing page only)
+  const typedEl = document.getElementById('heroQuoteTyped');
+  if(typedEl){
+    const fullText = '“Investing is not a choice. It’s a must.”';
+    const cursorEl = document.querySelector('.typing-cursor');
+    const citeEl = document.querySelector('.hero-quote cite');
+    let i = 0;
+    (function typeNext(){
+      if(i <= fullText.length){
+        typedEl.textContent = fullText.slice(0, i);
+        i++;
+        setTimeout(typeNext, 45);
+      } else {
+        typedEl.innerHTML = '“Investing is not a <span class="quote-word-red">choice</span>. ' +
+          'It’s a <span class="quote-word-green">must</span>.”';
+        if(cursorEl) cursorEl.classList.add('done');
+        if(citeEl) citeEl.classList.add('show');
+      }
+    })();
+  }
+
+  // Affordability Index preview — subtle reveal + score count-up, replays
+  // every time the preview scrolls into view (not just the first time)
+  const heroPreview = document.getElementById('heroPreview');
+  const heroPreviewScore = document.getElementById('heroPreviewScore');
+  if(heroPreview && 'IntersectionObserver' in window){
+    let countUpToken = 0;
+
+    const observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          heroPreview.classList.add('in-view');
+
+          if(heroPreviewScore){
+            const myToken = ++countUpToken;
+            const target = 2.8;
+            const duration = 900;
+            const start = performance.now();
+            (function tick(now){
+              if(myToken !== countUpToken) return;
+              const progress = Math.min((now - start) / duration, 1);
+              heroPreviewScore.textContent = (target * progress).toFixed(2);
+              if(progress < 1) requestAnimationFrame(tick);
+            })(start);
+          }
+        } else {
+          heroPreview.classList.remove('in-view');
+          countUpToken++;
+          if(heroPreviewScore) heroPreviewScore.textContent = '0.00';
+        }
+      });
+    }, {threshold: 0.4});
+    observer.observe(heroPreview);
+  }
+
+  // "Why should I invest?" charts (landing page only)
+  renderTrendChart('chartInflation', [
+    {label: 'Now', value: 100},
+    {label: '5 yr', value: 74.7},
+    {label: '10 yr', value: 55.8},
+    {label: '15 yr', value: 41.7},
+    {label: '20 yr', value: 31.2},
+    {label: '25 yr', value: 23.3},
+    {label: '30 yr', value: 17.4}
+  ], {
+    valueFormat: function(v){ return '₹' + Math.round(v); },
+    yMin: 0,
+    yMax: 100
+  });
+
+  renderTrendChart('chartIncome', [
+    {label: '25', value: 50},
+    {label: '35', value: 90},
+    {label: '45', value: 120},
+    {label: '55', value: 130},
+    {label: '60', value: 130},
+    {label: '61', value: 8},
+    {label: '70', value: 8},
+    {label: '80', value: 8}
+  ], {
+    valueFormat: function(v){ return '₹' + v + 'k/mo'; },
+    yMin: 0,
+    yMax: 140,
+    labelIndex: 5,
+    endLabel: 'Income stops',
+    labelAbove: true
+  });
+
+  // Life-chip connector line: only show when the chips actually fit on one
+  // row (a wrapped row would make a single straight line cut across wrong)
+  const chipRow = document.querySelector('.life-chip-row');
+  if(chipRow){
+    const updateChipRowLayout = function(){
+      const chips = chipRow.querySelectorAll('.life-chip');
+      if(!chips.length) return;
+      const firstTop = chips[0].offsetTop;
+      const wrapped = Array.prototype.some.call(chips, function(chip){
+        return chip.offsetTop !== firstTop;
+      });
+      chipRow.classList.toggle('single-row', !wrapped);
+    };
+    updateChipRowLayout();
+    window.addEventListener('resize', updateChipRowLayout);
+  }
 });
