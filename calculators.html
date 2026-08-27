@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 <div class="shell">
@@ -149,6 +149,12 @@
 
     <div class="card">
       <h2>Calculate Your Score</h2>
+
+      <div class="edit-banner" id="editBanner">
+        <span id="editBannerText"></span>
+        <button type="button" class="edit-banner-cancel" onclick="cancelEditHistory()">Start a new entry instead</button>
+      </div>
+
       <div class="field-grid">
         <div class="field" id="field-productName" style="grid-column:1 / -1;">
           <label for="productName">What are you buying?</label>
@@ -193,7 +199,7 @@
       </div>
 
       <div class="actions">
-        <button class="calc" onclick="calculate()">Calculate</button>
+        <button class="calc" id="calculateBtn" onclick="calculate()">Calculate</button>
         <button class="reset" onclick="resetForm()">Reset</button>
       </div>
 
@@ -321,6 +327,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="firebase-auth.js?v=7"></script>
-<script src="script.js?v=10"></script>
+<script src="script.js?v=12"></script>
 </body>
 </html>

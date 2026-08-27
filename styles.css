@@ -1248,6 +1248,52 @@
   }
   .history-delete-btn:hover{background:rgba(239,106,95,0.14); color:var(--red);}
 
+  .history-edit-btn{
+    flex-shrink:0;
+    width:32px;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:none;
+    border:none;
+    color:var(--ink-300);
+    cursor:pointer;
+    font-size:14px;
+    transition:background-color 0.15s, color 0.15s;
+  }
+  .history-edit-btn:hover{background:rgba(92,182,249,0.14); color:var(--accent-text);}
+
+  /* ---------- Edit-history banner ---------- */
+  .edit-banner{
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    background:rgba(92,182,249,0.1);
+    border:1px solid var(--sky-400);
+    border-radius:10px;
+    padding:12px 16px;
+    margin-bottom:20px;
+    font-size:14px;
+    color:var(--accent-text);
+  }
+  .edit-banner.show{display:flex;}
+  .edit-banner-cancel{
+    background:none;
+    border:none;
+    color:var(--accent-text);
+    font-family:var(--font-body);
+    font-size:13.5px;
+    font-weight:600;
+    text-decoration:underline;
+    cursor:pointer;
+    padding:0;
+    white-space:nowrap;
+  }
+
   .threshold-note{
     margin-top:18px;
     font-size:14.5px;

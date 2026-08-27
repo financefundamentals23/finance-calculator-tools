@@ -380,17 +380,23 @@ function calculate(){
   const productName = document.getElementById('productName').value.trim();
   if(!productName) return;
 
-  if(typeof saveCalculationToHistory === 'function'){
-    saveCalculationToHistory({
-      productName: productName,
-      ai: aiNumberEl.textContent,
-      classificationText: document.getElementById('aiBadgeText').textContent,
-      classificationClass: aiNumberEl.className,
-      inputs: {
-        P: rawNumber('P'), S: rawNumber('S'), E: rawNumber('E'),
-        I: rawNumber('I'), D: rawNumber('D'), M: rawNumber('M'), T: rawNumber('T')
-      }
-    });
+  const entry = {
+    productName: productName,
+    ai: aiNumberEl.textContent,
+    classificationText: document.getElementById('aiBadgeText').textContent,
+    classificationClass: aiNumberEl.className,
+    inputs: {
+      P: rawNumber('P'), S: rawNumber('S'), E: rawNumber('E'),
+      I: rawNumber('I'), D: rawNumber('D'), M: rawNumber('M'), T: rawNumber('T')
+    }
+  };
+
+  if(editingHistoryId){
+    if(typeof updateCalculationInHistory === 'function'){
+      updateCalculationInHistory(editingHistoryId, entry);
+    }
+  } else if(typeof saveCalculationToHistory === 'function'){
+    saveCalculationToHistory(entry);
   }
 }
 
@@ -403,10 +409,74 @@ function resetForm(){
   });
   document.getElementById('result').classList.remove('show');
   document.getElementById('recommendation').classList.remove('show');
+
+  if(typeof exitEditMode === 'function') exitEditMode();
 }
 
 // ---------- Calculation history (Firestore) ----------
 const HISTORY_CALCULATOR_TYPE = 'affordability-index';
+let editingHistoryId = null;
+
+function updateCalculationInHistory(id, entry){
+  if(typeof db === 'undefined' || !db) return;
+
+  db.collection('history').doc(id).update({
+    productName: entry.productName,
+    ai: entry.ai,
+    classificationText: entry.classificationText,
+    classificationClass: entry.classificationClass,
+    inputs: entry.inputs
+  }).then(function(){
+    loadCalculatorHistory();
+  }).catch(function(err){
+    console.error('Failed to update calculation history:', err);
+  });
+}
+
+function editHistoryItem(id){
+  if(typeof db === 'undefined' || !db) return;
+
+  db.collection('history').doc(id).get().then(function(doc){
+    if(!doc.exists) return;
+    const d = doc.data();
+
+    document.getElementById('productName').value = d.productName || '';
+    document.getElementById('field-productName').classList.remove('error');
+
+    ['P','S','E','I','D','M','T'].forEach(function(key){
+      const input = document.getElementById(key);
+      input.value = d.inputs && d.inputs[key] != null ? d.inputs[key] : '';
+      formatWithCommas(input);
+      document.getElementById('field-' + key).classList.remove('error');
+    });
+
+    editingHistoryId = id;
+
+    const banner = document.getElementById('editBanner');
+    const bannerText = document.getElementById('editBannerText');
+    if(banner) banner.classList.add('show');
+    if(bannerText) bannerText.textContent = 'Editing "' + d.productName + '" — changing values and hitting Calculate will update this entry.';
+
+    const calcBtn = document.getElementById('calculateBtn');
+    if(calcBtn) calcBtn.textContent = 'Update';
+
+    document.getElementById('editBanner').scrollIntoView({behavior:'smooth', block:'center'});
+  }).catch(function(err){
+    console.error('Failed to load calculation for editing:', err);
+  });
+}
+
+function exitEditMode(){
+  editingHistoryId = null;
+  const banner = document.getElementById('editBanner');
+  if(banner) banner.classList.remove('show');
+  const calcBtn = document.getElementById('calculateBtn');
+  if(calcBtn) calcBtn.textContent = 'Calculate';
+}
+
+function cancelEditHistory(){
+  resetForm();
+}
 
 function saveCalculationToHistory(entry){
   if(typeof db === 'undefined' || !db) return;
@@ -481,6 +551,9 @@ function renderHistoryItems(docs){
           '<button type="button" class="history-delete-btn" title="Delete" onclick="deleteHistoryItem(\'' + doc.id + '\')">' +
             '<i class="fa-solid fa-trash"></i>' +
           '</button>' +
+          '<button type="button" class="history-edit-btn" title="Edit" onclick="editHistoryItem(\'' + doc.id + '\')">' +
+            '<i class="fa-solid fa-pen-to-square"></i>' +
+          '</button>' +
         '</div>' +
       '</div>'
     );
@@ -497,6 +570,7 @@ function deleteHistoryItem(id){
   }).then(function(ok){
     if(!ok || typeof db === 'undefined' || !db) return;
     db.collection('history').doc(id).delete().then(function(){
+      if(editingHistoryId === id && typeof exitEditMode === 'function') exitEditMode();
       loadCalculatorHistory();
     }).catch(function(err){
       console.error('Failed to delete history item:', err);
