@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 <div class="shell">
@@ -33,11 +33,66 @@
       <li><a class="topnav-link active" href="calculators.html">Finance Calculator</a></li>
     </ul>
 
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
-      <i class="fa-solid fa-moon" id="themeIcon"></i>
-      <span id="themeLabel">Dark mode</span>
-    </button>
+    <div class="topnav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <i class="fa-solid fa-moon" id="themeIcon"></i>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+
+      <div class="auth-controls">
+        <a class="auth-signin" id="authSignedOut" href="login.html">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign in
+        </a>
+        <div class="auth-user" id="authSignedIn">
+          <img class="auth-avatar" id="authUserAvatar" alt="" referrerpolicy="no-referrer">
+          <div class="auth-avatar auth-avatar-fallback" id="authUserAvatarFallback"></div>
+          <span id="authUserName"></span>
+          <button class="auth-signout" onclick="signOutUser()" title="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        </div>
+      </div>
+      <script>
+        (function(){
+          try{
+            var cached = JSON.parse(localStorage.getItem('ffCachedUser') || 'null');
+            if(!cached) return;
+            var signedOut = document.getElementById('authSignedOut');
+            var signedIn = document.getElementById('authSignedIn');
+            var nameEl = document.getElementById('authUserName');
+            var avatarEl = document.getElementById('authUserAvatar');
+            var avatarFallbackEl = document.getElementById('authUserAvatarFallback');
+            var displayName = cached.displayName || cached.email || 'Signed in';
+            if(signedOut) signedOut.style.display = 'none';
+            if(signedIn) signedIn.style.display = 'flex';
+            if(nameEl) nameEl.textContent = displayName;
+            if(cached.photoURL){
+              if(avatarEl){ avatarEl.src = cached.photoURL; avatarEl.style.display = ''; }
+              if(avatarFallbackEl) avatarFallbackEl.classList.remove('show');
+            } else {
+              if(avatarEl) avatarEl.style.display = 'none';
+              if(avatarFallbackEl){
+                avatarFallbackEl.textContent = displayName.charAt(0).toUpperCase();
+                avatarFallbackEl.classList.add('show');
+              }
+            }
+          }catch(e){}
+        })();
+      </script>
+    </div>
   </header>
+
+  <div class="auth-loader"><div class="spinner"></div></div>
+
+  <div class="auth-gate" id="authGate">
+    <div class="card">
+      <h2>Sign In Required</h2>
+      <p class="lede">Sign in to use the Affordability Index calculator.</p>
+      <div class="actions">
+        <a class="calc" href="login.html">Sign In</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="gatedContent">
 
   <nav class="formula-bar">
     <ul class="nav-list">
@@ -95,6 +150,11 @@
     <div class="card">
       <h2>Calculate Your Score</h2>
       <div class="field-grid">
+        <div class="field" id="field-productName" style="grid-column:1 / -1;">
+          <label for="productName">What are you buying?</label>
+          <input type="text" id="productName" placeholder="e.g. New car, MacBook Pro">
+          <span class="error-msg">This field is required</span>
+        </div>
         <div class="field" id="field-P">
           <label for="P">Purchase price (P)</label>
           <input type="text" inputmode="decimal" class="num-input" id="P" placeholder="e.g. 15,00,000">
@@ -211,12 +271,35 @@
       <p class="threshold-note">The crucial cutoff is <strong>AI ≥ 2</strong> — that's the working definition of "financially affordable" used throughout this tool.</p>
     </div>
     </div>
+
+    <details class="card history-panel" id="historyPanel">
+      <summary>
+        <span>Your Saved Calculations</span>
+      </summary>
+      <div class="history-list" id="historyList">
+        <p class="history-empty" id="historyEmpty">Sign in and calculate to start saving your history.</p>
+      </div>
+    </details>
   </main>
+
+  </div>
 </div>
 
 <div class="feedback-widget" id="feedbackWidget">
-  <a class="feedback-bubble" id="feedbackBubble" href="mailto:finance.fundamentals23@gmail.com?subject=Feedback%20on%20Finance%20Calculator" title="Email your feedback">Got a minute? I'd love to hear your feedback on this tool.</a>
-  <button type="button" class="feedback-icon" title="Feedback" onclick="toggleFeedbackWidget()"><i class="fa-solid fa-envelope"></i></button>
+  <div class="feedback-panel" id="feedbackBubble">
+    <p class="feedback-panel-title">Got a minute? I'd love to hear your feedback on this tool.</p>
+    <div class="feedback-rating" id="feedbackRating">
+      <button type="button" class="star-btn" data-value="1" onclick="setFeedbackRating(1)" title="1 star"><i class="fa-solid fa-star"></i></button>
+      <button type="button" class="star-btn" data-value="2" onclick="setFeedbackRating(2)" title="2 stars"><i class="fa-solid fa-star"></i></button>
+      <button type="button" class="star-btn" data-value="3" onclick="setFeedbackRating(3)" title="3 stars"><i class="fa-solid fa-star"></i></button>
+      <button type="button" class="star-btn" data-value="4" onclick="setFeedbackRating(4)" title="4 stars"><i class="fa-solid fa-star"></i></button>
+      <button type="button" class="star-btn" data-value="5" onclick="setFeedbackRating(5)" title="5 stars"><i class="fa-solid fa-star"></i></button>
+    </div>
+    <textarea id="feedbackText" placeholder="What's working, what's not..." rows="3"></textarea>
+    <button type="button" class="calc feedback-submit" id="feedbackSubmitBtn" onclick="submitFeedback()">Send feedback</button>
+    <p class="feedback-status" id="feedbackStatus"></p>
+  </div>
+  <button type="button" class="feedback-icon" title="Feedback" onclick="toggleFeedbackWidget()"><i class="fa-solid fa-pen"></i></button>
 </div>
 
 <nav class="bottom-nav">
@@ -234,6 +317,10 @@
   </button>
 </nav>
 
-<script src="script.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="firebase-auth.js?v=7"></script>
+<script src="script.js?v=10"></script>
 </body>
 </html>

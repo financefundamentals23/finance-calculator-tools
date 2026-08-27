@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" class="auth-pending">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 <div class="shell">
@@ -33,18 +33,59 @@
       <li><a class="topnav-link" href="calculators.html">Finance Calculator</a></li>
     </ul>
 
-    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
-      <i class="fa-solid fa-moon" id="themeIcon"></i>
-      <span id="themeLabel">Dark mode</span>
-    </button>
+    <div class="topnav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <i class="fa-solid fa-moon" id="themeIcon"></i>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+
+      <div class="auth-controls">
+        <a class="auth-signin" id="authSignedOut" href="login.html">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign in
+        </a>
+        <div class="auth-user" id="authSignedIn">
+          <img class="auth-avatar" id="authUserAvatar" alt="" referrerpolicy="no-referrer">
+          <div class="auth-avatar auth-avatar-fallback" id="authUserAvatarFallback"></div>
+          <span id="authUserName"></span>
+          <button class="auth-signout" onclick="signOutUser()" title="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        </div>
+      </div>
+      <script>
+        (function(){
+          try{
+            var cached = JSON.parse(localStorage.getItem('ffCachedUser') || 'null');
+            if(!cached) return;
+            var signedOut = document.getElementById('authSignedOut');
+            var signedIn = document.getElementById('authSignedIn');
+            var nameEl = document.getElementById('authUserName');
+            var avatarEl = document.getElementById('authUserAvatar');
+            var avatarFallbackEl = document.getElementById('authUserAvatarFallback');
+            var displayName = cached.displayName || cached.email || 'Signed in';
+            if(signedOut) signedOut.style.display = 'none';
+            if(signedIn) signedIn.style.display = 'flex';
+            if(nameEl) nameEl.textContent = displayName;
+            if(cached.photoURL){
+              if(avatarEl){ avatarEl.src = cached.photoURL; avatarEl.style.display = ''; }
+              if(avatarFallbackEl) avatarFallbackEl.classList.remove('show');
+            } else {
+              if(avatarEl) avatarEl.style.display = 'none';
+              if(avatarFallbackEl){
+                avatarFallbackEl.textContent = displayName.charAt(0).toUpperCase();
+                avatarFallbackEl.classList.add('show');
+              }
+            }
+          }catch(e){}
+        })();
+      </script>
+    </div>
   </header>
 
-  <main>
+  <main class="landing-main">
     <div class="eyebrow">Personal finance, worked out properly</div>
-    <h1>Know what you can actually afford</h1>
-    <p class="lede">A small, growing library of calculators that turn your income, savings, and
-      spending into a single, honest number — so "can I afford this?" gets a real answer
-      instead of a guess.</p>
+    <blockquote class="hero-quote">
+      <p>&ldquo;Investing is not a choice. It's a must.&rdquo;</p>
+      <cite>— Rohith Surya</cite>
+    </blockquote>
 
     <a class="card signature card-link" href="calculators.html">
       <h2>Start With The Affordability Index</h2>
@@ -53,22 +94,113 @@
         — plus a personalized recommendation if it's not there yet.</p>
     </a>
 
-    <div class="card">
-      <h2>What You Get</h2>
-      <div class="var-grid">
-        <div class="var-row"><span class="sym">✓</span> A single, classified affordability score</div>
-        <div class="var-row"><span class="sym">✓</span> A 5-point financial health snapshot</div>
-        <div class="var-row"><span class="sym">✓</span> Plain-language recommendations, not just numbers</div>
-        <div class="var-row"><span class="sym">✓</span> More calculators added over time</div>
-      </div>
-    </div>
+    <section class="landing-section">
+      <div class="eyebrow">Why Finance Fundamentals</div>
+      <h2 class="section-title">Everything you need to make the call</h2>
+      <p class="section-lede">No spreadsheets, no guesswork — just the numbers that actually
+        decide whether a purchase makes sense.</p>
 
-    <div class="actions">
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-gauge-high"></i></div>
+          <h3>A single, classified score</h3>
+          <p>Every input rolls up into one Affordability Index, from "Cannot afford" to
+            "Very comfortable" — no mental math required.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+          <h3>5-point health snapshot</h3>
+          <p>Emergency fund, debt-to-income, essential expenses, savings rate, and free
+            cash flow — checked automatically against healthy benchmarks.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-comment-dots"></i></div>
+          <h3>Plain-language guidance</h3>
+          <p>When a purchase isn't comfortably affordable yet, you get a specific,
+            prioritized reason why — not just a red number.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon"><i class="fa-solid fa-layer-group"></i></div>
+          <h3>Growing toolset</h3>
+          <p>The Affordability Index is the first calculator. More are joining the same
+            page over time, built with the same standard.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <div class="eyebrow">How it works</div>
+      <h2 class="section-title">Three inputs, one honest answer</h2>
+      <p class="section-lede">Nothing to install, nothing to save — enter your numbers and
+        get your answer immediately.</p>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Enter your numbers</h3>
+          <p>Income, expenses, debt, savings, and the purchase you're weighing.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Get your score</h3>
+          <p>The Affordability Index calculates instantly and classifies where you stand.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>See what to fix</h3>
+          <p>If it's not affordable yet, get a specific, prioritized next step.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="cta-banner">
+      <h2>Ready to find out what you can afford?</h2>
+      <p>It takes less than a minute to enter your numbers and get a real answer.</p>
       <a class="calc" href="calculators.html">Open the Finance Calculator</a>
     </div>
+
+    <section class="landing-section">
+      <div class="eyebrow">FAQ</div>
+      <h2 class="section-title">Common questions</h2>
+
+      <div class="faq">
+        <details class="faq-item" open>
+          <summary>Is this financial advice?</summary>
+          <p>No. Finance Fundamentals is a set of calculators, not a licensed advisor —
+            it turns the numbers you enter into a clear score, not a recommendation to
+            buy or not buy.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is my data saved anywhere?</summary>
+          <p>Each calculation you run is saved to your account's history so you can look back
+            on it later — visible only to you, and you can delete any entry at any time.</p>
+        </details>
+        <details class="faq-item">
+          <summary>Is it free to use?</summary>
+          <p>Yes — the Affordability Index and every calculator added after it are free
+            to use.</p>
+        </details>
+        <details class="faq-item">
+          <summary>What calculators are coming next?</summary>
+          <p>More are in progress. They'll appear alongside the Affordability Index on
+            the same calculator page.</p>
+        </details>
+      </div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="calculators.html">Finance Calculator</a>
+    </div>
+    <p>&copy; 2026 Finance Fundamentals. All rights reserved.</p>
+  </footer>
 </div>
 
-<script src="script.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="firebase-auth.js?v=7"></script>
+<script src="script.js?v=10"></script>
 </body>
 </html>

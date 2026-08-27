@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Calculator — Sign In</title>
+<script>
+  var savedTheme = localStorage.getItem('theme');
+  if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
+</script>
+<link rel="icon" type="image/svg+xml" href="ff-logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="styles.css?v=5">
+</head>
+<body>
+<div class="shell">
+
+  <header class="topnav">
+    <a class="brand" href="index.html">
+      <div class="mark">
+        <span class="big">F</span>
+        <span class="small">f</span>
+      </div>
+      <div class="brand-text">
+        <span class="name">Finance Fundamentals</span>
+      </div>
+    </a>
+
+    <ul class="topnav-links">
+      <li><a class="topnav-link" href="index.html">Home</a></li>
+      <li><a class="topnav-link" href="calculators.html">Finance Calculator</a></li>
+    </ul>
+
+    <div class="topnav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <i class="fa-solid fa-moon" id="themeIcon"></i>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="auth-gate">
+    <div class="auth-gate-inner">
+      <img class="auth-hero-avatar" src="https://vygxluwjcdzcbnwchlot.supabase.co/storage/v1/object/public/finance-fundamentals-ui-assets/ff-web-ui/rohith-origami.png" alt="">
+      <div class="card">
+      <h2 id="authFormTitle">Sign In</h2>
+      <p class="lede">Sign in to use the Affordability Index calculator.</p>
+
+      <div class="field-grid">
+        <div class="field" id="field-email">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="you@example.com">
+          <span class="error-msg" id="emailError">Email is required</span>
+        </div>
+        <div class="field" id="field-password">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="At least 6 characters">
+          <span class="error-msg" id="passwordError">Password is required</span>
+        </div>
+        <div class="field" id="field-confirmPassword" style="display:none;">
+          <label for="confirmPassword">Confirm password</label>
+          <input type="password" id="confirmPassword" placeholder="Retype your password">
+          <span class="error-msg" id="confirmPasswordError">Passwords don't match</span>
+        </div>
+      </div>
+
+      <p class="auth-forgot-line" id="authForgotLine">
+        <a href="#" onclick="handleForgotPassword(); return false;">Forgot password?</a>
+      </p>
+
+      <p class="auth-form-error" id="authFormError"></p>
+      <p class="auth-form-notice" id="authFormNotice"></p>
+
+      <div class="actions">
+        <button class="calc" id="authSubmitBtn" onclick="handleEmailAuthSubmit()">Sign In</button>
+      </div>
+
+      <p class="auth-toggle-line">
+        <span id="authToggleText">Don't have an account?</span>
+        <a href="#" id="authToggleLink" onclick="toggleAuthMode(); return false;">Sign up</a>
+      </p>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <div class="actions">
+        <button class="auth-signin" onclick="signInWithGoogle()">
+          <i class="fa-brands fa-google"></i> Continue with Google
+        </button>
+      </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="firebase-auth.js?v=7"></script>
+<script src="script.js?v=10"></script>
+</body>
+</html>

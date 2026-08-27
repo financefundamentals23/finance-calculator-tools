@@ -6,22 +6,148 @@
 function showFeedbackWidget(){
   const bubble = document.getElementById('feedbackBubble');
   if(bubble) bubble.classList.add('show');
+  resetFeedbackStatus();
 }
 
 function hideFeedbackWidget(){
   const bubble = document.getElementById('feedbackBubble');
   if(bubble) bubble.classList.remove('show');
+  resetFeedbackStatus();
 }
 
 function toggleFeedbackWidget(){
   const bubble = document.getElementById('feedbackBubble');
-  if(bubble) bubble.classList.toggle('show');
+  if(!bubble) return;
+  if(bubble.classList.contains('show')){
+    hideFeedbackWidget();
+  } else {
+    showFeedbackWidget();
+  }
+}
+
+function resetFeedbackStatus(){
+  const statusEl = document.getElementById('feedbackStatus');
+  if(statusEl){
+    statusEl.textContent = '';
+    statusEl.className = 'feedback-status';
+  }
+  feedbackRating = 0;
+  document.querySelectorAll('#feedbackRating .star-btn').forEach(function(btn){
+    btn.classList.remove('active');
+  });
+}
+
+// Reusable confirm modal — replaces window.confirm() with a themed dialog.
+// Usage: showConfirm({title, message, confirmText, cancelText, danger}).then(ok => ...)
+function showConfirm(opts){
+  opts = opts || {};
+  return new Promise(function(resolve){
+    let overlay = document.getElementById('confirmOverlay');
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.className = 'confirm-overlay';
+      overlay.id = 'confirmOverlay';
+      overlay.innerHTML =
+        '<div class="confirm-modal">' +
+          '<h3 id="confirmTitle"></h3>' +
+          '<p id="confirmMessage"></p>' +
+          '<div class="confirm-actions">' +
+            '<button type="button" class="reset" id="confirmCancelBtn"></button>' +
+            '<button type="button" class="calc" id="confirmOkBtn"></button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(overlay);
+    }
+
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+
+    document.getElementById('confirmTitle').textContent = opts.title || 'Are you sure?';
+    document.getElementById('confirmMessage').textContent = opts.message || '';
+    okBtn.textContent = opts.confirmText || 'Confirm';
+    cancelBtn.textContent = opts.cancelText || 'Cancel';
+    okBtn.classList.toggle('danger', !!opts.danger);
+
+    overlay.classList.add('show');
+
+    function cleanup(result){
+      overlay.classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onOverlayClick);
+      document.removeEventListener('keydown', onKeydown);
+      resolve(result);
+    }
+    function onOk(){ cleanup(true); }
+    function onCancel(){ cleanup(false); }
+    function onOverlayClick(e){ if(e.target === overlay) cleanup(false); }
+    function onKeydown(e){ if(e.key === 'Escape') cleanup(false); }
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlayClick);
+    document.addEventListener('keydown', onKeydown);
+  });
+}
+
+let feedbackRating = 0;
+
+function setFeedbackRating(value){
+  feedbackRating = value;
+  document.querySelectorAll('#feedbackRating .star-btn').forEach(function(btn){
+    btn.classList.toggle('active', Number(btn.dataset.value) <= value);
+  });
 }
 
 document.addEventListener('click', function(e){
   const widget = document.getElementById('feedbackWidget');
   if(widget && !widget.contains(e.target)) hideFeedbackWidget();
 });
+
+function submitFeedback(){
+  const textEl = document.getElementById('feedbackText');
+  const statusEl = document.getElementById('feedbackStatus');
+  const btn = document.getElementById('feedbackSubmitBtn');
+  if(!textEl || !statusEl || !btn) return;
+
+  const message = textEl.value.trim();
+  if(!message){
+    statusEl.textContent = 'Please write something first.';
+    statusEl.className = 'feedback-status error';
+    return;
+  }
+  if(typeof db === 'undefined' || !db){
+    statusEl.textContent = "Couldn't send — try again shortly.";
+    statusEl.className = 'feedback-status error';
+    return;
+  }
+
+  const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+
+  btn.disabled = true;
+  statusEl.textContent = '';
+  statusEl.className = 'feedback-status';
+
+  db.collection('feedback').add({
+    message: message,
+    rating: feedbackRating || null,
+    email: user ? (user.email || null) : null,
+    uid: user ? user.uid : null,
+    page: window.location.pathname,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){
+    textEl.value = '';
+    feedbackRating = 0;
+    statusEl.textContent = 'Thanks — feedback sent!';
+    statusEl.className = 'feedback-status success';
+    setTimeout(hideFeedbackWidget, 1800);
+  }).catch(function(){
+    statusEl.textContent = "Couldn't send — try again shortly.";
+    statusEl.className = 'feedback-status error';
+  }).finally(function(){
+    btn.disabled = false;
+  });
+}
 
 function classify(ai){
   if(ai < 0)  return {text:"Cannot afford", cls:"red"};
@@ -143,6 +269,19 @@ function renderResults(showErrors){
   const values = {};
   let hasError = false;
 
+  if(showErrors){
+    const nameEl = document.getElementById('productName');
+    const nameFieldEl = document.getElementById('field-productName');
+    if(nameEl && nameFieldEl){
+      if(!nameEl.value.trim()){
+        nameFieldEl.classList.add('error');
+        hasError = true;
+      } else {
+        nameFieldEl.classList.remove('error');
+      }
+    }
+  }
+
   ids.forEach(id => {
     const val = rawNumber(id);
     values[id] = val;
@@ -233,15 +372,142 @@ function renderResults(showErrors){
 
 function calculate(){
   renderResults(true);
+
+  const resultBox = document.getElementById('result');
+  const aiNumberEl = document.getElementById('aiNumber');
+  if(!resultBox.classList.contains('show') || aiNumberEl.textContent === '—') return;
+
+  const productName = document.getElementById('productName').value.trim();
+  if(!productName) return;
+
+  if(typeof saveCalculationToHistory === 'function'){
+    saveCalculationToHistory({
+      productName: productName,
+      ai: aiNumberEl.textContent,
+      classificationText: document.getElementById('aiBadgeText').textContent,
+      classificationClass: aiNumberEl.className,
+      inputs: {
+        P: rawNumber('P'), S: rawNumber('S'), E: rawNumber('E'),
+        I: rawNumber('I'), D: rawNumber('D'), M: rawNumber('M'), T: rawNumber('T')
+      }
+    });
+  }
 }
 
 function resetForm(){
+  document.getElementById('productName').value = '';
+  document.getElementById('field-productName').classList.remove('error');
   ['P','S','E','I','D','M','T'].forEach(id => {
     document.getElementById(id).value = '';
     document.getElementById('field-' + id).classList.remove('error');
   });
   document.getElementById('result').classList.remove('show');
   document.getElementById('recommendation').classList.remove('show');
+}
+
+// ---------- Calculation history (Firestore) ----------
+const HISTORY_CALCULATOR_TYPE = 'affordability-index';
+
+function saveCalculationToHistory(entry){
+  if(typeof db === 'undefined' || !db) return;
+  const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  if(!user) return;
+
+  db.collection('history').add({
+    uid: user.uid,
+    calculatorType: HISTORY_CALCULATOR_TYPE,
+    productName: entry.productName,
+    ai: entry.ai,
+    classificationText: entry.classificationText,
+    classificationClass: entry.classificationClass,
+    inputs: entry.inputs,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(function(){
+    loadCalculatorHistory();
+  }).catch(function(err){
+    console.error('Failed to save calculation history:', err);
+  });
+}
+
+function loadCalculatorHistory(){
+  const listEl = document.getElementById('historyList');
+  if(!listEl || typeof db === 'undefined' || !db) return;
+
+  const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  if(!user){
+    listEl.innerHTML = '<p class="history-empty" id="historyEmpty">Sign in and calculate to start saving your history.</p>';
+    return;
+  }
+
+  db.collection('history')
+    .where('uid', '==', user.uid)
+    .orderBy('createdAt', 'desc')
+    .get()
+    .then(function(snapshot){
+      const docs = snapshot.docs.filter(function(doc){
+        return doc.data().calculatorType === HISTORY_CALCULATOR_TYPE;
+      });
+      renderHistoryItems(docs);
+    })
+    .catch(function(err){
+      console.error('Failed to load calculation history:', err);
+      listEl.innerHTML = '<p class="history-empty">Couldn\'t load your history right now.</p>';
+    });
+}
+
+function renderHistoryItems(docs){
+  const listEl = document.getElementById('historyList');
+  if(!listEl) return;
+
+  if(!docs.length){
+    listEl.innerHTML = '<p class="history-empty" id="historyEmpty">No saved calculations yet — calculate your score above to save one.</p>';
+    return;
+  }
+
+  listEl.innerHTML = docs.map(function(doc){
+    const d = doc.data();
+    const date = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate() : null;
+    const dateText = date ? date.toLocaleDateString(undefined, {year:'numeric', month:'short', day:'numeric'}) : '';
+    return (
+      '<div class="history-item">' +
+        '<div class="history-item-main">' +
+          '<span class="history-item-name">' + escapeHtml(d.productName) + '</span>' +
+          '<span class="history-item-meta">' + dateText + '</span>' +
+        '</div>' +
+        '<div class="history-item-right">' +
+          '<span class="badge ' + escapeHtml(d.classificationClass || '') + '">' +
+            '<span class="dot"></span>' + escapeHtml(d.ai) + ' &middot; ' + escapeHtml(d.classificationText) +
+          '</span>' +
+          '<button type="button" class="history-delete-btn" title="Delete" onclick="deleteHistoryItem(\'' + doc.id + '\')">' +
+            '<i class="fa-solid fa-trash"></i>' +
+          '</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function deleteHistoryItem(id){
+  showConfirm({
+    title: 'Delete this calculation?',
+    message: "This can't be undone.",
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    danger: true
+  }).then(function(ok){
+    if(!ok || typeof db === 'undefined' || !db) return;
+    db.collection('history').doc(id).delete().then(function(){
+      loadCalculatorHistory();
+    }).catch(function(err){
+      console.error('Failed to delete history item:', err);
+    });
+  });
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str == null ? '' : String(str);
+  return div.innerHTML;
 }
 
 // Live comma formatting as the user types, so amounts stay readable
@@ -281,6 +547,21 @@ document.querySelectorAll('.num-input').forEach(input => {
     e.preventDefault();
   });
 });
+
+// Product name field — letters/spaces/punctuation only, no digits
+const productNameInput = document.getElementById('productName');
+if(productNameInput){
+  productNameInput.addEventListener('input', () => {
+    const stripped = productNameInput.value.replace(/[0-9]/g, '');
+    if(stripped !== productNameInput.value) productNameInput.value = stripped;
+    if(productNameInput.value.trim() !== ''){
+      document.getElementById('field-productName').classList.remove('error');
+    }
+  });
+  productNameInput.addEventListener('keydown', e => {
+    if(/^[0-9]$/.test(e.key)) e.preventDefault();
+  });
+}
 
 // Theme toggle
 function applyThemeUI(theme){
