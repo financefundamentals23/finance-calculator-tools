@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css?v=30">
+<link rel="stylesheet" href="styles.css?v=41">
 </head>
 <body>
 <div class="shell">
@@ -29,7 +29,7 @@
     </a>
 
     <ul class="topnav-links">
-      <li><a class="topnav-link active" href="index.html">Home</a></li>
+      <li><a class="topnav-link active" href="index.html">Why us?</a></li>
       <li><a class="topnav-link" href="calculators.html">Finance Calculator</a></li>
     </ul>
 
@@ -43,11 +43,22 @@
         <a class="auth-signin" id="authSignedOut" href="login.html">
           <i class="fa-solid fa-right-to-bracket"></i> Sign in
         </a>
-        <div class="auth-user" id="authSignedIn">
-          <img class="auth-avatar" id="authUserAvatar" alt="" referrerpolicy="no-referrer">
-          <div class="auth-avatar auth-avatar-fallback" id="authUserAvatarFallback"></div>
-          <span id="authUserName"></span>
-          <button class="auth-signout" onclick="signOutUser()" title="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        <div class="auth-menu" id="authSignedIn">
+          <button type="button" class="auth-user-toggle" id="authUserToggle" aria-haspopup="true" aria-expanded="false">
+            <img class="auth-avatar" id="authUserAvatar" alt="" referrerpolicy="no-referrer">
+            <div class="auth-avatar auth-avatar-fallback" id="authUserAvatarFallback"></div>
+            <span id="authUserName"></span>
+            <i class="fa-solid fa-chevron-down auth-caret"></i>
+          </button>
+          <div class="auth-dropdown" id="authDropdown" role="menu">
+            <button type="button" class="auth-dropdown-item" role="menuitem" onclick="toggleTheme()">
+              <i class="fa-solid fa-moon" id="menuThemeIcon"></i> <span id="menuThemeLabel">Dark mode</span>
+            </button>
+            <div class="auth-dropdown-divider"></div>
+            <button type="button" class="auth-dropdown-item auth-dropdown-item-danger" role="menuitem" onclick="signOutUser()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign out
+            </button>
+          </div>
         </div>
       </div>
       <script>
@@ -57,12 +68,14 @@
             if(!cached) return;
             var signedOut = document.getElementById('authSignedOut');
             var signedIn = document.getElementById('authSignedIn');
+            var themeToggle = document.getElementById('themeToggle');
             var nameEl = document.getElementById('authUserName');
             var avatarEl = document.getElementById('authUserAvatar');
             var avatarFallbackEl = document.getElementById('authUserAvatarFallback');
             var displayName = cached.displayName || cached.email || 'Signed in';
             if(signedOut) signedOut.style.display = 'none';
             if(signedIn) signedIn.style.display = 'flex';
+            if(themeToggle) themeToggle.style.display = 'none';
             if(nameEl) nameEl.textContent = displayName;
             if(cached.photoURL){
               if(avatarEl){ avatarEl.src = cached.photoURL; avatarEl.style.display = ''; }
@@ -98,27 +111,115 @@
         understand money, make smarter financial decisions, and answer one important question:
         <strong>How can I make better decisions with my money?</strong></p>
 
-      <div class="life-chip-row">
-        <div class="life-chip-connector"></div>
-        <div class="life-chip" tabindex="0" data-tooltip="Raising a family — childcare, school, everyday needs.">
-          <span class="life-chip-icon"><i class="fa-solid fa-people-roof"></i></span>Family
+      <div class="life-journey" id="lifeJourney">
+        <div class="journey-track">
+          <div class="journey-rail"></div>
+          <div class="journey-rail-fill"></div>
+          <div class="journey-traveler"></div>
+
+          <div class="journey-stops">
+            <button class="journey-stop" type="button"
+              data-desc="Raising a family — childcare, school, everyday needs.">
+              <span class="journey-stop-dot"><i class="fa-solid fa-people-roof"></i></span>
+              <span class="journey-stop-label">Family</span>
+              <span class="sr-only">Raising a family — childcare, school, everyday needs.</span>
+            </button>
+            <button class="journey-stop" type="button"
+              data-desc="Buying or renting, it's usually your biggest expense.">
+              <span class="journey-stop-dot"><i class="fa-solid fa-house"></i></span>
+              <span class="journey-stop-label">Home</span>
+              <span class="sr-only">Buying or renting, it's usually your biggest expense.</span>
+            </button>
+            <button class="journey-stop" type="button"
+              data-desc="Medical care isn't optional — and it isn't cheap.">
+              <span class="journey-stop-dot"><i class="fa-solid fa-heart-pulse"></i></span>
+              <span class="journey-stop-label">Health</span>
+              <span class="sr-only">Medical care isn't optional — and it isn't cheap.</span>
+            </button>
+            <button class="journey-stop" type="button"
+              data-desc="Learning costs money, at every stage of life.">
+              <span class="journey-stop-dot"><i class="fa-solid fa-graduation-cap"></i></span>
+              <span class="journey-stop-label">Education</span>
+              <span class="sr-only">Learning costs money, at every stage of life.</span>
+            </button>
+            <button class="journey-stop" type="button"
+              data-desc="Even a well-earned break needs a budget.">
+              <span class="journey-stop-dot"><i class="fa-solid fa-plane"></i></span>
+              <span class="journey-stop-label">Travel</span>
+              <span class="sr-only">Even a well-earned break needs a budget.</span>
+            </button>
+            <button class="journey-stop" type="button"
+              data-desc="No income doesn't mean no expenses.">
+              <span class="journey-stop-dot"><i class="fa-solid fa-umbrella-beach"></i></span>
+              <span class="journey-stop-label">Retirement</span>
+              <span class="sr-only">No income doesn't mean no expenses.</span>
+            </button>
+          </div>
         </div>
-        <div class="life-chip" tabindex="0" data-tooltip="Buying or renting, it's usually your biggest expense.">
-          <span class="life-chip-icon"><i class="fa-solid fa-house"></i></span>Home
-        </div>
-        <div class="life-chip" tabindex="0" data-tooltip="Medical care isn't optional — and it isn't cheap.">
-          <span class="life-chip-icon"><i class="fa-solid fa-heart-pulse"></i></span>Health
-        </div>
-        <div class="life-chip" tabindex="0" data-tooltip="Learning costs money, at every stage of life.">
-          <span class="life-chip-icon"><i class="fa-solid fa-graduation-cap"></i></span>Education
-        </div>
-        <div class="life-chip" tabindex="0" data-tooltip="Even a well-earned break needs a budget.">
-          <span class="life-chip-icon"><i class="fa-solid fa-plane"></i></span>Travel
-        </div>
-        <div class="life-chip" tabindex="0" data-tooltip="No income doesn't mean no expenses.">
-          <span class="life-chip-icon"><i class="fa-solid fa-umbrella-beach"></i></span>Retirement
+
+        <div class="journey-panel show" aria-hidden="true">
+          <div class="journey-panel-inner">
+            <div class="journey-panel-title">Family</div>
+            <p class="journey-panel-desc">Raising a family — childcare, school, everyday needs.</p>
+          </div>
         </div>
       </div>
+    </section>
+
+    <section class="landing-section">
+      <div class="eyebrow">Inflation</div>
+      <h2 class="section-title">The same note, worth less every year</h2>
+      <p class="section-lede">A ₹2,000 note doesn't change. What it can buy does. At a typical
+        7% average yearly inflation, watch its real worth quietly shrink — one year at a
+        time.</p>
+
+      <div class="inflation-stage" id="inflationStage" role="img"
+        aria-label="Animated illustration of a stylized ₹2,000 note slowly shrinking and fading over 30 years, as its real worth falls to about ₹263 at 7% average yearly inflation, then resets.">
+        <div class="inflation-note" id="inflationNote">
+          <svg viewBox="0 0 325 130" xmlns="http://www.w3.org/2000/svg" class="inflation-note-svg">
+            <defs>
+              <linearGradient id="noteFace" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#c94f95"/>
+                <stop offset="100%" stop-color="#7a2a63"/>
+              </linearGradient>
+            </defs>
+            <rect x="2" y="2" width="321" height="126" rx="9" fill="url(#noteFace)" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+            <rect x="10" y="10" width="305" height="110" rx="5" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1" stroke-dasharray="1.5 3.5"/>
+            <g stroke="rgba(255,255,255,0.14)" stroke-width="1" fill="none">
+              <path d="M22,108 C70,78 90,128 145,98"/>
+              <path d="M180,108 C228,78 248,128 303,98"/>
+            </g>
+            <g transform="translate(163,65)">
+              <circle r="27" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"/>
+              <text x="0" y="10" text-anchor="middle" font-family="'League Spartan', sans-serif" font-weight="800" font-size="28" fill="#ffffff">₹</text>
+            </g>
+            <text x="22" y="34" font-family="'League Spartan', sans-serif" font-weight="700" font-size="19" fill="#ffffff">₹2000</text>
+            <text x="303" y="112" text-anchor="end" font-family="'League Spartan', sans-serif" font-weight="700" font-size="19" fill="#ffffff">₹2000</text>
+            <text x="22" y="112" font-family="'League Spartan', sans-serif" font-weight="600" font-size="7.5" letter-spacing="1.6" fill="rgba(255,255,255,0.65)">FINANCE FUNDAMENTALS</text>
+            <text x="303" y="24" text-anchor="end" font-family="'League Spartan', sans-serif" font-weight="600" font-size="7.5" letter-spacing="1.6" fill="rgba(255,255,255,0.65)">ILLUSTRATIVE</text>
+          </svg>
+        </div>
+        <div class="inflation-readout">
+          <span class="inflation-readout-year" id="inflationYear">Year 0</span>
+          <span class="inflation-readout-worth" id="inflationWorth">Real worth: ₹2,000</span>
+        </div>
+      </div>
+      <p class="inflation-note-caption">Illustrative — assumes 7% average yearly inflation,
+        looping through 30 years. Not the actual ₹2,000 banknote design.</p>
+
+      <table class="sr-only">
+        <caption>Real worth of a ₹2,000 note over time, at 7% average yearly inflation</caption>
+        <thead><tr><th>Years from now</th><th>Real worth</th></tr></thead>
+        <tbody>
+          <tr><td>Now</td><td>₹2,000</td></tr>
+          <tr><td>5 yr</td><td>₹1,426</td></tr>
+          <tr><td>10 yr</td><td>₹1,017</td></tr>
+          <tr><td>15 yr</td><td>₹725</td></tr>
+          <tr><td>20 yr</td><td>₹517</td></tr>
+          <tr><td>25 yr</td><td>₹368</td></tr>
+          <tr><td>30 yr</td><td>₹263</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section class="landing-section">
@@ -131,23 +232,23 @@
       <div class="invest-chart-grid">
         <div class="invest-chart-card">
           <h3>Inflation erodes what your money is worth</h3>
-          <p class="invest-chart-sub">Purchasing power of ₹100 today, at 6% average
+          <p class="invest-chart-sub">Purchasing power of ₹100 today, at 7% average
             yearly inflation.</p>
           <div class="chart-canvas" id="chartInflation"
             role="img"
-            aria-label="Line chart: the purchasing power of 100 rupees today falls to about 17 rupees after 30 years at 6% average inflation.">
+            aria-label="Line chart: the purchasing power of 100 rupees today falls to about 13 rupees after 30 years at 7% average inflation.">
           </div>
           <table class="sr-only">
-            <caption>Purchasing power of ₹100 today, by year, at 6% average inflation</caption>
+            <caption>Purchasing power of ₹100 today, by year, at 7% average inflation</caption>
             <thead><tr><th>Years from now</th><th>Value</th></tr></thead>
             <tbody>
               <tr><td>Now</td><td>₹100</td></tr>
-              <tr><td>5 yr</td><td>₹75</td></tr>
-              <tr><td>10 yr</td><td>₹56</td></tr>
-              <tr><td>15 yr</td><td>₹42</td></tr>
-              <tr><td>20 yr</td><td>₹31</td></tr>
-              <tr><td>25 yr</td><td>₹23</td></tr>
-              <tr><td>30 yr</td><td>₹17</td></tr>
+              <tr><td>5 yr</td><td>₹71</td></tr>
+              <tr><td>10 yr</td><td>₹51</td></tr>
+              <tr><td>15 yr</td><td>₹36</td></tr>
+              <tr><td>20 yr</td><td>₹26</td></tr>
+              <tr><td>25 yr</td><td>₹18</td></tr>
+              <tr><td>30 yr</td><td>₹13</td></tr>
             </tbody>
           </table>
         </div>
@@ -244,37 +345,6 @@
     </section>
 
     <section class="landing-section">
-      <div class="eyebrow">How it works</div>
-      <h2 class="section-title">Three inputs, one honest answer</h2>
-      <p class="section-lede">Nothing to install, nothing to save — enter your numbers and
-        get your answer immediately.</p>
-
-      <div class="steps">
-        <div class="step">
-          <div class="step-number">1</div>
-          <h3>Enter your numbers</h3>
-          <p>Income, expenses, debt, savings, and the purchase you're weighing.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">2</div>
-          <h3>Get your score</h3>
-          <p>The Affordability Index calculates instantly and classifies where you stand.</p>
-        </div>
-        <div class="step">
-          <div class="step-number">3</div>
-          <h3>See what to fix</h3>
-          <p>If it's not affordable yet, get a specific, prioritized next step.</p>
-        </div>
-      </div>
-    </section>
-
-    <div class="cta-banner">
-      <h2>Ready to find out what you can afford?</h2>
-      <p>It takes less than a minute to enter your numbers and get a real answer.</p>
-      <a class="calc" href="calculators.html">Open the Finance Calculator</a>
-    </div>
-
-    <section class="landing-section">
       <div class="eyebrow">FAQ</div>
       <h2 class="section-title">Common questions</h2>
 
@@ -315,7 +385,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="firebase-auth.js?v=7"></script>
-<script src="script.js?v=21"></script>
+<script src="firebase-auth.js?v=8"></script>
+<script src="script.js?v=26"></script>
 </body>
 </html>

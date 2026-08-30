@@ -642,6 +642,10 @@ function applyThemeUI(theme){
   if(label){ label.textContent = theme === 'light' ? 'Light mode' : 'Dark mode'; }
   const bnIcon = document.getElementById('bnThemeIcon');
   if(bnIcon){ bnIcon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
+  const menuIcon = document.getElementById('menuThemeIcon');
+  if(menuIcon){ menuIcon.className = theme === 'light' ? 'fa-solid fa-sun' : 'fa-solid fa-moon'; }
+  const menuLabel = document.getElementById('menuThemeLabel');
+  if(menuLabel){ menuLabel.textContent = theme === 'light' ? 'Light mode' : 'Dark mode'; }
 }
 
 function toggleTheme(){
@@ -873,12 +877,12 @@ document.addEventListener('DOMContentLoaded', function(){
   // "Why should I invest?" charts (landing page only)
   renderTrendChart('chartInflation', [
     {label: 'Now', value: 100},
-    {label: '5 yr', value: 74.7},
-    {label: '10 yr', value: 55.8},
-    {label: '15 yr', value: 41.7},
-    {label: '20 yr', value: 31.2},
-    {label: '25 yr', value: 23.3},
-    {label: '30 yr', value: 17.4}
+    {label: '5 yr', value: 71.3},
+    {label: '10 yr', value: 50.8},
+    {label: '15 yr', value: 36.2},
+    {label: '20 yr', value: 25.8},
+    {label: '25 yr', value: 18.4},
+    {label: '30 yr', value: 13.1}
   ], {
     valueFormat: function(v){ return '₹' + Math.round(v); },
     yMin: 0,
@@ -903,20 +907,383 @@ document.addEventListener('DOMContentLoaded', function(){
     labelAbove: true
   });
 
-  // Life-chip connector line: only show when the chips actually fit on one
-  // row (a wrapped row would make a single straight line cut across wrong)
-  const chipRow = document.querySelector('.life-chip-row');
-  if(chipRow){
-    const updateChipRowLayout = function(){
-      const chips = chipRow.querySelectorAll('.life-chip');
-      if(!chips.length) return;
-      const firstTop = chips[0].offsetTop;
-      const wrapped = Array.prototype.some.call(chips, function(chip){
-        return chip.offsetTop !== firstTop;
+  // Inflation note visual (landing page only) — a stylized ₹2,000 note that
+  // slowly shrinks and fades on a loop, its real worth falling at 7% average
+  // yearly inflation, then resets as if freshly printed. Pauses off-screen.
+  (function(){
+    const stage = document.getElementById('inflationStage');
+    const note = document.getElementById('inflationNote');
+    const yearEl = document.getElementById('inflationYear');
+    const worthEl = document.getElementById('inflationWorth');
+    if(!stage || !note || !yearEl || !worthEl) return;
+
+    const FACE_VALUE = 2000;
+    const RATE = 0.07;
+    const SPAN_YEARS = 30;
+    const SWEEP_MS = 11000;
+    const HOLD_MS = 900;
+    const RESET_MS = 700;
+    const CYCLE_MS = SWEEP_MS + HOLD_MS + RESET_MS;
+
+    function easeInOutQuad(t){
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+
+    function paint(t, opacity){
+      const year = Math.round(t * SPAN_YEARS);
+      const worth = Math.round(FACE_VALUE / Math.pow(1 + RATE, year));
+
+      note.style.transform = 'scale(' + (1 - 0.5 * t).toFixed(3) + ')';
+      note.style.opacity = opacity.toFixed(3);
+      note.style.filter = 'saturate(' + (1 - 0.65 * t).toFixed(2) + ')';
+
+      const yearText = 'Year ' + year;
+      if(yearEl.textContent !== yearText) yearEl.textContent = yearText;
+      const worthText = 'Real worth: ₹' + worth.toLocaleString('en-US');
+      if(worthEl.textContent !== worthText) worthEl.textContent = worthText;
+    }
+
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      paint(1, 1);
+      return;
+    }
+
+    paint(0, 1);
+
+    let running = false;
+    let rafId = null;
+    let startTime = null;
+
+    function frame(now){
+      if(!running) return;
+      if(startTime == null) startTime = now;
+      const elapsed = (now - startTime) % CYCLE_MS;
+
+      if(elapsed < SWEEP_MS){
+        paint(easeInOutQuad(elapsed / SWEEP_MS), 1);
+      } else if(elapsed < SWEEP_MS + HOLD_MS){
+        paint(1, 1);
+      } else {
+        const rt = (elapsed - SWEEP_MS - HOLD_MS) / RESET_MS;
+        paint(rt < 0.5 ? 1 : 0, rt < 0.5 ? 1 - rt * 2 : (rt - 0.5) * 2);
+      }
+      rafId = requestAnimationFrame(frame);
+    }
+
+    function start(){
+      if(running) return;
+      running = true;
+      startTime = null;
+      rafId = requestAnimationFrame(frame);
+    }
+    function stop(){
+      if(!running) return;
+      running = false;
+      if(rafId != null) cancelAnimationFrame(rafId);
+      paint(0, 1);
+    }
+
+    if('IntersectionObserver' in window){
+      new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if(entry.isIntersecting) start(); else stop();
+        });
+      }, {threshold: 0.3}).observe(stage);
+    } else {
+      start();
+    }
+  })();
+
+  // "Money is part of every life stage" journey (landing page only) — a dot
+  // runs the rail, stopping at each life stage to light it up and reveal what
+  // it costs. Autoplays only while on screen; hover/focus takes manual control.
+  (function(){
+    const root = document.getElementById('lifeJourney');
+    if(!root) return;
+    const track = root.querySelector('.journey-track');
+    const rail = root.querySelector('.journey-rail');
+    const fill = root.querySelector('.journey-rail-fill');
+    const traveler = root.querySelector('.journey-traveler');
+    const panel = root.querySelector('.journey-panel');
+    const panelTitle = root.querySelector('.journey-panel-title');
+    const panelDesc = root.querySelector('.journey-panel-desc');
+    const stops = Array.prototype.slice.call(root.querySelectorAll('.journey-stop'));
+    if(!stops.length) return;
+
+    const LEAD = 24;          // run-up before the first stop / run-out past the last
+    const TRAVEL_MS = 620;    // one hop
+    const DWELL_MS = 2300;    // pause at a stop, description showing
+    const GAP_MS = 700;       // blank beat before the loop restarts
+    const UNIT_MS = DWELL_MS + TRAVEL_MS;
+    const TOTAL_MS = TRAVEL_MS + stops.length * UNIT_MS + GAP_MS;
+
+    let centers = [];
+    let railStart = 0, railEnd = 0;
+    let lastActive = -2, lastVisited = -1, lastPanel = -1;
+
+    function measure(){
+      const trackBox = track.getBoundingClientRect();
+      if(!trackBox.width) return false;
+      let centerY = 0;
+      centers = stops.map(function(stop){
+        const box = stop.querySelector('.journey-stop-dot').getBoundingClientRect();
+        centerY = box.top - trackBox.top + box.height / 2;
+        return box.left - trackBox.left + box.width / 2;
       });
-      chipRow.classList.toggle('single-row', !wrapped);
-    };
-    updateChipRowLayout();
-    window.addEventListener('resize', updateChipRowLayout);
-  }
+      const lead = Math.min(LEAD, centers[0]);
+      railStart = centers[0] - lead;
+      railEnd = centers[centers.length - 1] + lead;
+
+      rail.style.left = railStart + 'px';
+      rail.style.width = (railEnd - railStart) + 'px';
+      rail.style.top = (centerY - 1) + 'px';
+      fill.style.left = railStart + 'px';
+      fill.style.top = (centerY - 1) + 'px';
+      traveler.style.top = centerY + 'px';
+      return true;
+    }
+
+    function easeInOutCubic(t){
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function setPanel(i, shown){
+      if(i >= 0 && i !== lastPanel){
+        lastPanel = i;
+        panelTitle.textContent = stops[i].querySelector('.journey-stop-label').textContent;
+        panelDesc.textContent = stops[i].getAttribute('data-desc') || '';
+      }
+      panel.classList.toggle('show', !!shown);
+    }
+
+    function setStops(activeIdx, visitedThrough){
+      if(activeIdx === lastActive && visitedThrough === lastVisited) return;
+      lastActive = activeIdx;
+      lastVisited = visitedThrough;
+      stops.forEach(function(stop, i){
+        stop.classList.toggle('active', i === activeIdx);
+        stop.classList.toggle('visited', i <= visitedThrough && i !== activeIdx);
+      });
+    }
+
+    function place(x, opacity, parked){
+      traveler.style.left = x + 'px';
+      traveler.style.opacity = opacity;
+      traveler.classList.toggle('parked', !!parked);
+      fill.style.width = Math.max(0, x - railStart) + 'px';
+    }
+
+    // Position + state are a pure function of where we are in the loop, so a
+    // resize or a jump can just re-render at the same time offset.
+    function render(t){
+      if(!centers.length) return;
+      const last = stops.length - 1;
+
+      if(t < TRAVEL_MS){                                   // rolling up to the first stop
+        const p = easeInOutCubic(t / TRAVEL_MS);
+        place(railStart + (centers[0] - railStart) * p, 1, false);
+        setStops(-1, -1);
+        setPanel(0, true);
+        return;
+      }
+
+      const u = t - TRAVEL_MS;
+      const i = Math.floor(u / UNIT_MS);
+
+      if(i > last){                                        // blank beat, then restart
+        place(railEnd, 0, false);
+        setStops(-1, -1);
+        setPanel(-1, false);
+        return;
+      }
+
+      const r = u - i * UNIT_MS;
+      if(r < DWELL_MS){                                    // parked at stop i
+        place(centers[i], 1, true);
+        setStops(i, i);
+        setPanel(i, true);
+        return;
+      }
+
+      const p = easeInOutCubic((r - DWELL_MS) / TRAVEL_MS);
+      const to = i === last ? railEnd : centers[i + 1];
+      place(centers[i] + (to - centers[i]) * p, i === last ? 1 - p : 1, false);
+      setStops(-1, i);
+      setPanel(i, false);
+    }
+
+    const reduceMotion = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Time offset at which stop i's dwell begins — the resume point after a
+    // hover/focus jump, and what a manual selection renders.
+    function dwellAt(i){ return TRAVEL_MS + i * UNIT_MS; }
+
+    let running = false;
+    let rafId = null;
+    let t0 = 0;
+    let held = null;      // stop index currently pinned by hover/focus/click
+    let releaseTimer = null;
+
+    function frame(now){
+      if(!running) return;
+      render((now - t0) % TOTAL_MS);
+      rafId = requestAnimationFrame(frame);
+    }
+
+    function start(fromOffset){
+      if(running || reduceMotion) return;
+      running = true;
+      t0 = performance.now() - (fromOffset || 0);
+      rafId = requestAnimationFrame(frame);
+    }
+
+    function stop(){
+      running = false;
+      if(rafId != null){ cancelAnimationFrame(rafId); rafId = null; }
+    }
+
+    function hold(i){
+      clearTimeout(releaseTimer);
+      stop();
+      held = i;
+      root.classList.add('snapping');
+      render(dwellAt(i));
+    }
+
+    function release(){
+      if(held == null) return;
+      const from = dwellAt(held);
+      held = null;
+      root.classList.remove('snapping');
+      if(inView) start(from);
+    }
+
+    stops.forEach(function(el, i){
+      el.addEventListener('mouseenter', function(){ hold(i); });
+      el.addEventListener('focus', function(){ hold(i); });
+      el.addEventListener('mouseleave', release);
+      el.addEventListener('blur', release);
+      // Touch: no mouseleave to release on, so hand control back after a beat
+      el.addEventListener('click', function(){
+        hold(i);
+        clearTimeout(releaseTimer);
+        releaseTimer = setTimeout(release, 4000);
+      });
+    });
+
+    let inView = false;
+    function activate(){
+      inView = true;
+      // The track can still be unmeasurable at DOMContentLoaded; by the time it
+      // scrolls into view it never is, so take the measurement then instead.
+      if(!centers.length) measure();
+      if(held == null) start(0);
+    }
+    function deactivate(){
+      inView = false;
+      stop();
+      if(held == null) render(0);
+    }
+
+    function init(){
+      measure();
+      render(0);
+      if(reduceMotion){
+        render(dwellAt(0));
+        return;
+      }
+      if('IntersectionObserver' in window){
+        new IntersectionObserver(function(entries){
+          entries.forEach(function(entry){
+            if(entry.isIntersecting) activate(); else deactivate();
+          });
+        }, {threshold: 0.35}).observe(root);
+      } else {
+        activate();
+      }
+    }
+
+    init();
+
+    let resizeTimer = null;
+    window.addEventListener('resize', function(){
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(function(){
+        if(!measure()) return;
+        if(held != null) render(dwellAt(held));
+        else if(running) render((performance.now() - t0) % TOTAL_MS);
+        else render(reduceMotion ? dwellAt(0) : 0);
+      }, 120);
+    });
+
+    // The CDN icon sheet and webfonts can land after first paint and shift the
+    // row, so take the geometry again once everything has settled.
+    function remeasure(){
+      if(!measure()) return;
+      if(held != null) render(dwellAt(held));
+      else if(!running) render(reduceMotion ? dwellAt(0) : 0);
+    }
+    if(document.fonts && document.fonts.ready){
+      document.fonts.ready.then(remeasure);
+    }
+    window.addEventListener('load', remeasure);
+  })();
+
+  // Account menu — the sign-out button lives behind this toggle on purpose,
+  // so leaving is never a single accidental click (the confirm dialog inside
+  // signOutUser() is the second layer).
+  (function(){
+    const menu = document.getElementById('authSignedIn');
+    const toggle = document.getElementById('authUserToggle');
+    if(!menu || !toggle) return;
+
+    function isOpen(){ return menu.classList.contains('open'); }
+    function close(){
+      menu.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+    function open(){
+      menu.classList.add('open');
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+
+    toggle.addEventListener('click', function(e){
+      e.stopPropagation();
+      if(isOpen()) close(); else open();
+    });
+    document.addEventListener('click', function(e){
+      if(isOpen() && !menu.contains(e.target)) close();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape' && isOpen()){
+        close();
+        toggle.focus();
+      }
+    });
+  })();
+
+  // Collapsible left sidebar (calculator page only) — remembers state across
+  // visits, same pattern as the theme toggle.
+  (function(){
+    const sideNav = document.getElementById('sideNav');
+    const toggle = document.getElementById('sideNavToggle');
+    if(!sideNav || !toggle) return;
+
+    function apply(collapsed){
+      sideNav.classList.toggle('collapsed', collapsed);
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      toggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+    }
+
+    let collapsed = false;
+    try{ collapsed = localStorage.getItem('sideNavCollapsed') === '1'; }catch(e){}
+    apply(collapsed);
+
+    toggle.addEventListener('click', function(){
+      collapsed = !collapsed;
+      apply(collapsed);
+      try{ localStorage.setItem('sideNavCollapsed', collapsed ? '1' : '0'); }catch(e){}
+    });
+  })();
 });

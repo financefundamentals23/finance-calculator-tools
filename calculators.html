@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css?v=30">
+<link rel="stylesheet" href="styles.css?v=41">
 </head>
 <body>
 <div class="shell">
@@ -29,7 +29,7 @@
     </a>
 
     <ul class="topnav-links">
-      <li><a class="topnav-link" href="index.html">Home</a></li>
+      <li><a class="topnav-link" href="index.html">Why us?</a></li>
       <li><a class="topnav-link active" href="calculators.html">Finance Calculator</a></li>
     </ul>
 
@@ -43,11 +43,22 @@
         <a class="auth-signin" id="authSignedOut" href="login.html">
           <i class="fa-solid fa-right-to-bracket"></i> Sign in
         </a>
-        <div class="auth-user" id="authSignedIn">
-          <img class="auth-avatar" id="authUserAvatar" alt="" referrerpolicy="no-referrer">
-          <div class="auth-avatar auth-avatar-fallback" id="authUserAvatarFallback"></div>
-          <span id="authUserName"></span>
-          <button class="auth-signout" onclick="signOutUser()" title="Sign out"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        <div class="auth-menu" id="authSignedIn">
+          <button type="button" class="auth-user-toggle" id="authUserToggle" aria-haspopup="true" aria-expanded="false">
+            <img class="auth-avatar" id="authUserAvatar" alt="" referrerpolicy="no-referrer">
+            <div class="auth-avatar auth-avatar-fallback" id="authUserAvatarFallback"></div>
+            <span id="authUserName"></span>
+            <i class="fa-solid fa-chevron-down auth-caret"></i>
+          </button>
+          <div class="auth-dropdown" id="authDropdown" role="menu">
+            <button type="button" class="auth-dropdown-item" role="menuitem" onclick="toggleTheme()">
+              <i class="fa-solid fa-moon" id="menuThemeIcon"></i> <span id="menuThemeLabel">Dark mode</span>
+            </button>
+            <div class="auth-dropdown-divider"></div>
+            <button type="button" class="auth-dropdown-item auth-dropdown-item-danger" role="menuitem" onclick="signOutUser()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign out
+            </button>
+          </div>
         </div>
       </div>
       <script>
@@ -57,12 +68,14 @@
             if(!cached) return;
             var signedOut = document.getElementById('authSignedOut');
             var signedIn = document.getElementById('authSignedIn');
+            var themeToggle = document.getElementById('themeToggle');
             var nameEl = document.getElementById('authUserName');
             var avatarEl = document.getElementById('authUserAvatar');
             var avatarFallbackEl = document.getElementById('authUserAvatarFallback');
             var displayName = cached.displayName || cached.email || 'Signed in';
             if(signedOut) signedOut.style.display = 'none';
             if(signedIn) signedIn.style.display = 'flex';
+            if(themeToggle) themeToggle.style.display = 'none';
             if(nameEl) nameEl.textContent = displayName;
             if(cached.photoURL){
               if(avatarEl){ avatarEl.src = cached.photoURL; avatarEl.style.display = ''; }
@@ -94,7 +107,14 @@
 
   <div id="gatedContent">
 
-  <nav class="formula-bar">
+  <div class="calculator-shell">
+  <nav class="side-nav" id="sideNav">
+    <div class="side-nav-head">
+      <span class="side-nav-title">Calculators</span>
+      <button type="button" class="side-nav-toggle" id="sideNavToggle" aria-expanded="true" title="Collapse sidebar">
+        <i class="fa-solid fa-angles-left"></i>
+      </button>
+    </div>
     <ul class="nav-list">
       <li class="nav-item active" title="Affordability Index">
         <span class="nav-icon">A</span>
@@ -288,6 +308,7 @@
       </div>
     </details>
   </main>
+  </div>
 
   </div>
 </div>
@@ -327,7 +348,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="firebase-auth.js?v=7"></script>
-<script src="script.js?v=21"></script>
+<script src="firebase-auth.js?v=8"></script>
+<script src="script.js?v=26"></script>
 </body>
 </html>

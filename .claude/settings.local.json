@@ -5,7 +5,10 @@
       "Bash(node /tmp/dvcheck/validate_palette.js \"#5cb6f9\" --mode light --surface \"#ffffff\")",
       "Bash(node /tmp/dvcheck/validate_palette.js \"#ef6a5f\" --mode dark --surface \"#182943\")",
       "Bash(node /tmp/dvcheck/validate_palette.js \"#ef6a5f\" --mode light --surface \"#ffffff\")",
-      "Bash(grep -n \"Calculate Your Score\\\\|id=\\\\\"result\\\\\"\\\\|How To Read The Score\\\\|</div>\\\\s*$\" /Users/rohiths/finance-fundamentals-git-repos/finance-calculator-tools/calculators.html)"
+      "Bash(grep -n \"Calculate Your Score\\\\|id=\\\\\"result\\\\\"\\\\|How To Read The Score\\\\|</div>\\\\s*$\" /Users/rohiths/finance-fundamentals-git-repos/finance-calculator-tools/calculators.html)",
+      "Bash(sed -i '' 's/styles\\\\.css?v=38/styles.css?v=39/' *.html)",
+      "Bash(sed -i '' 's/script\\\\.js?v=27/script.js?v=28/' login.html)",
+      "Bash(sed -i '' 's/styles\\\\.css?v=39/styles.css?v=40/' *.html && grep -n \"styles.css?v=\" *.html)"
     ]
   }
 }

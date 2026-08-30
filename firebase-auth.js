@@ -158,6 +158,7 @@ function handleEmailAuthSubmit(){
 function applyAuthUI(user){
   const signedOut = document.getElementById('authSignedOut');
   const signedIn = document.getElementById('authSignedIn');
+  const themeToggle = document.getElementById('themeToggle');
   const gate = document.getElementById('authGate');
   const gatedContent = document.getElementById('gatedContent');
 
@@ -168,6 +169,9 @@ function applyAuthUI(user){
       return;
     }
     if(signedOut) signedOut.style.display = 'none';
+    // The standalone toggle only exists for signed-out visitors — once
+    // signed in, theme lives in the profile dropdown instead.
+    if(themeToggle) themeToggle.style.display = 'none';
     if(signedIn){
       signedIn.style.display = 'flex';
       const nameEl = document.getElementById('authUserName');
@@ -201,6 +205,7 @@ function applyAuthUI(user){
   } else {
     if(signedOut) signedOut.style.display = 'flex';
     if(signedIn) signedIn.style.display = 'none';
+    if(themeToggle) themeToggle.style.display = '';
     if(gate) gate.style.display = '';
     if(gatedContent) gatedContent.style.display = 'none';
 

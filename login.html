@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-<link rel="stylesheet" href="styles.css?v=30">
+<link rel="stylesheet" href="styles.css?v=41">
 </head>
 <body>
 <div class="shell">
@@ -29,7 +29,7 @@
     </a>
 
     <ul class="topnav-links">
-      <li><a class="topnav-link" href="index.html">Home</a></li>
+      <li><a class="topnav-link" href="index.html">Why us?</a></li>
       <li><a class="topnav-link" href="calculators.html">Finance Calculator</a></li>
     </ul>
 
@@ -41,9 +41,15 @@
     </div>
   </header>
 
-  <div class="auth-gate">
+  <div class="auth-gate auth-split">
+    <div class="auth-illustration" aria-hidden="true">
+      <!-- Isometric 3D diorama, built from primitives at runtime in
+           room-scene.js. The canvas is transparent, so the panel gradient
+           below shows through and stays the fallback if WebGL is missing. -->
+      <canvas id="roomCanvas"></canvas>
+    </div>
+
     <div class="auth-gate-inner">
-      <img class="auth-hero-avatar" src="https://vygxluwjcdzcbnwchlot.supabase.co/storage/v1/object/public/finance-fundamentals-ui-assets/ff-web-ui/rohith-origami.png" alt="">
       <div class="card">
       <h2 id="authFormTitle">Sign In</h2>
       <p class="lede">Sign in to use the Affordability Index calculator.</p>
@@ -96,7 +102,17 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="firebase-auth.js?v=7"></script>
-<script src="script.js?v=21"></script>
+<script src="firebase-auth.js?v=8"></script>
+<script src="script.js?v=28"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="room-scene.js?v=6"></script>
 </body>
 </html>
