@@ -388,12 +388,23 @@ function calculate(){
     }
   };
 
+  const savePrompt = document.getElementById('savePrompt');
+  const signedInUser = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+
   if(editingHistoryId){
     if(typeof updateCalculationInHistory === 'function'){
       updateCalculationInHistory(editingHistoryId, entry);
     }
-  } else if(typeof saveCalculationToHistory === 'function'){
-    saveCalculationToHistory(entry);
+    if(savePrompt) savePrompt.classList.remove('show');
+  } else if(signedInUser){
+    if(typeof saveCalculationToHistory === 'function'){
+      saveCalculationToHistory(entry);
+    }
+    if(savePrompt) savePrompt.classList.remove('show');
+  } else if(savePrompt){
+    // Anonymous visitors get the full result; saving it is the one thing an
+    // account buys them, offered at the moment the result is worth keeping.
+    savePrompt.classList.add('show');
   }
 }
 
@@ -407,7 +418,18 @@ function resetForm(){
   document.getElementById('result').classList.remove('show');
   document.getElementById('recommendation').classList.remove('show');
 
+  const notice = document.getElementById('prefillNotice');
+  if(notice) notice.classList.remove('show');
+
+  const savePrompt = document.getElementById('savePrompt');
+  if(savePrompt) savePrompt.classList.remove('show');
+
   if(typeof exitEditMode === 'function') exitEditMode();
+
+  // A cleared form's resting state is "my saved details", same as a fresh
+  // page load — otherwise Reset would strand the user with blank fields they
+  // deliberately saved to avoid retyping.
+  if(typeof prefillCalculatorFromProfile === 'function') prefillCalculatorFromProfile();
 }
 
 // ---------- Calculation history (Firestore) ----------
@@ -448,6 +470,10 @@ function editHistoryItem(id){
     });
 
     editingHistoryId = id;
+
+    // These values came from the saved entry, not the profile.
+    const notice = document.getElementById('prefillNotice');
+    if(notice) notice.classList.remove('show');
 
     const banner = document.getElementById('editBanner');
     const bannerText = document.getElementById('editBannerText');
@@ -502,7 +528,7 @@ function loadCalculatorHistory(){
 
   const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
   if(!user){
-    listEl.innerHTML = '<p class="history-empty" id="historyEmpty">Sign in and calculate to start saving your history.</p>';
+    listEl.innerHTML = '<p class="history-empty" id="historyEmpty"><a href="login.html">Sign in</a> to save your calculations and come back to them later.</p>';
     return;
   }
 
@@ -581,6 +607,219 @@ function escapeHtml(str){
   return div.innerHTML;
 }
 
+// ---------- Saved user details (Firestore) ----------
+// The recurring figures a person shouldn't have to retype for every
+// calculation. Purchase-specific inputs (P, T) are deliberately excluded —
+// they change with each purchase, so a stored value would be wrong more often
+// than right. Keyed by uid so one doc per user, overwritten on save.
+const PROFILE_FIELDS = ['S', 'E', 'I', 'D', 'M'];
+// Profile page input ids are prefixed so they never collide with the
+// calculator's own S/E/I/D/M inputs if the two ever share a page.
+const PROFILE_INPUT_PREFIX = 'p';
+
+function getProfileDocRef(){
+  if(typeof db === 'undefined' || !db) return null;
+  const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  if(!user) return null;
+  return db.collection('profiles').doc(user.uid);
+}
+
+function setProfileStatus(message, isError){
+  const el = document.getElementById('profileStatus');
+  if(!el) return;
+  el.textContent = message;
+  el.classList.toggle('error', !!isError);
+  el.classList.toggle('show', !!message);
+}
+
+// Populates the profile page's own form from the saved doc.
+function loadProfileDetails(){
+  if(!document.getElementById('profileSaveBtn')) return; // not on the profile page
+
+  const ref = getProfileDocRef();
+  if(!ref){
+    PROFILE_FIELDS.forEach(function(key){
+      const input = document.getElementById(PROFILE_INPUT_PREFIX + key);
+      if(input) input.value = '';
+    });
+    return;
+  }
+
+  ref.get().then(function(doc){
+    const data = doc.exists ? (doc.data().details || {}) : {};
+    PROFILE_FIELDS.forEach(function(key){
+      const input = document.getElementById(PROFILE_INPUT_PREFIX + key);
+      if(!input) return;
+      input.value = data[key] != null ? data[key] : '';
+      formatWithCommas(input);
+    });
+  }).catch(function(err){
+    console.error('Failed to load saved details:', err);
+    setProfileStatus("Couldn't load your saved details right now.", true);
+  });
+}
+
+function saveProfileDetails(){
+  const ref = getProfileDocRef();
+  if(!ref){
+    setProfileStatus('Sign in to save your details.', true);
+    return;
+  }
+
+  // Blank is a legitimate answer — it means "I don't want this prefilled" —
+  // so empty fields are stored as null rather than skipped, otherwise a
+  // cleared field would keep its old value on the next load.
+  const details = {};
+  let anyFilled = false;
+  for(const key of PROFILE_FIELDS){
+    const input = document.getElementById(PROFILE_INPUT_PREFIX + key);
+    const raw = input ? input.value.replace(/,/g, '').trim() : '';
+    if(raw === ''){
+      details[key] = null;
+      continue;
+    }
+    const num = parseFloat(raw);
+    if(isNaN(num) || num < 0){
+      setProfileStatus('Values cannot be negative.', true);
+      return;
+    }
+    details[key] = num;
+    anyFilled = true;
+  }
+
+  const btn = document.getElementById('profileSaveBtn');
+  if(btn) btn.disabled = true;
+  setProfileStatus('Saving…');
+
+  ref.set({
+    details: details,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }, {merge: true}).then(function(){
+    setProfileStatus(anyFilled
+      ? 'Saved — your calculators will fill these in from now on.'
+      : 'Saved — nothing will be prefilled.');
+    if(btn) btn.disabled = false;
+  }).catch(function(err){
+    console.error('Failed to save details:', err);
+    setProfileStatus("Couldn't save your details. Try again.", true);
+    if(btn) btn.disabled = false;
+  });
+}
+
+function clearProfileDetails(){
+  showConfirm({
+    title: 'Clear your details?',
+    message: 'This empties every field here. Nothing will be prefilled in your calculators until you save new values.',
+    confirmText: 'Clear all',
+    cancelText: 'Cancel',
+    danger: true
+  }).then(function(ok){
+    if(!ok) return;
+    PROFILE_FIELDS.forEach(function(key){
+      const input = document.getElementById(PROFILE_INPUT_PREFIX + key);
+      if(input) input.value = '';
+    });
+    setProfileStatus('Cleared — hit Save details to confirm.');
+  });
+}
+
+// ---------- Account deletion (DPDP / GDPR right to erasure) ----------
+// Removes everything tied to the account, then the account itself. Firestore
+// has no cascading delete, so each collection is cleared explicitly — and the
+// auth user goes LAST, because losing the credential first would leave the
+// documents orphaned and unreachable.
+function deleteAccountAndData(){
+  const user = (typeof auth !== 'undefined' && auth) ? auth.currentUser : null;
+  if(!user){
+    setProfileStatus('Sign in first.', true);
+    return;
+  }
+
+  showConfirm({
+    title: 'Delete your account?',
+    message: 'This permanently deletes your saved calculations, your saved details, '
+           + 'and your account itself. It cannot be undone.',
+    confirmText: 'Delete everything',
+    cancelText: 'Cancel',
+    danger: true
+  }).then(function(ok){
+    if(!ok) return;
+
+    const btn = document.getElementById('deleteAccountBtn');
+    if(btn) btn.disabled = true;
+    setProfileStatus('Deleting your data…');
+
+    const uid = user.uid;
+
+    function clearHistory(){
+      if(typeof db === 'undefined' || !db) return Promise.resolve();
+      return db.collection('history').where('uid', '==', uid).get().then(function(snap){
+        return Promise.all(snap.docs.map(function(d){ return d.ref.delete(); }));
+      });
+    }
+    function clearProfile(){
+      if(typeof db === 'undefined' || !db) return Promise.resolve();
+      return db.collection('profiles').doc(uid).delete();
+    }
+
+    clearHistory()
+      .then(clearProfile)
+      .then(function(){ return user.delete(); })
+      .then(function(){
+        try{ localStorage.removeItem('ffCachedUser'); }catch(e){}
+        window.location.href = 'index.html';
+      })
+      .catch(function(err){
+        console.error('Account deletion failed:', err);
+        if(btn) btn.disabled = false;
+        // Firebase refuses to delete a user whose sign-in is not recent.
+        if(err && err.code === 'auth/requires-recent-login'){
+          setProfileStatus('For security, sign out and sign in again, then retry — '
+                         + 'your saved data has already been removed.', true);
+        } else {
+          setProfileStatus("Couldn't finish deleting your account. Try again, or contact "
+                         + 'support if it keeps failing.', true);
+        }
+      });
+  });
+}
+
+// Fills the calculator's own S/E/I/D/M inputs from the saved profile. Only
+// ever writes into fields the user has left empty, so it can't clobber a
+// figure someone is part-way through typing, and never touches P or T.
+// Edits made in the calculator stay local — saving back to the profile is a
+// separate, deliberate action on the profile page.
+function prefillCalculatorFromProfile(){
+  const marker = document.getElementById('prefillNotice');
+  if(!document.getElementById('calculateBtn')) return; // not on the calculator page
+
+  const ref = getProfileDocRef();
+  if(!ref) return;
+
+  ref.get().then(function(doc){
+    if(!doc.exists) return;
+    const data = doc.data().details || {};
+
+    const filled = [];
+    PROFILE_FIELDS.forEach(function(key){
+      const input = document.getElementById(key);
+      if(!input || input.value.trim() !== '') return;
+      if(data[key] == null) return;
+      input.value = data[key];
+      formatWithCommas(input);
+      const field = document.getElementById('field-' + key);
+      if(field) field.classList.remove('error');
+      filled.push(key);
+    });
+
+    if(marker){
+      marker.classList.toggle('show', filled.length > 0);
+    }
+  }).catch(function(err){
+    console.error('Failed to prefill from saved details:', err);
+  });
+}
+
 // Live comma formatting as the user types, so amounts stay readable
 function formatWithCommas(input){
   let raw = input.value.replace(/,/g, '');
@@ -602,11 +841,15 @@ document.querySelectorAll('.num-input').forEach(input => {
   input.addEventListener('input', () => {
     formatWithCommas(input);
     if(input.value.trim() !== ''){
-      document.getElementById('field-' + input.id).classList.remove('error');
+      const field = document.getElementById('field-' + input.id);
+      if(field) field.classList.remove('error');
     }
     // Live recalculation, but only once results are already showing
-    // (so the panel doesn't pop up before the user has pressed Calculate the first time)
-    if(document.getElementById('result').classList.contains('show')){
+    // (so the panel doesn't pop up before the user has pressed Calculate the first time).
+    // Pages without a result panel (e.g. the profile page) reuse these inputs
+    // purely for their comma formatting.
+    const result = document.getElementById('result');
+    if(result && result.classList.contains('show')){
       renderResults(false);
     }
   });

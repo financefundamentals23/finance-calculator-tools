@@ -12,6 +12,9 @@
     --font-display:'League Spartan', sans-serif;
     --font-body:'League Spartan', sans-serif;
     --font-mono:'League Spartan', sans-serif;
+    /* Height of the sticky .topnav — the calculator rail parks directly
+       beneath it, so both offsets come from one place. */
+    --topnav-h:71px;
 
     /* Themed scale — dark mode (default) */
     --navy-900:#132135;
@@ -22,6 +25,13 @@
     --ink-300:#9fb2c9;
     --accent-text:#8ccbfb;
     --chart-line:#ef6a5f;
+
+    /* App chrome — the calculator rail. Deliberately a different surface from
+       both the page background and the cards, so it reads as navigation
+       furniture rather than page content. */
+    --rail-bg:#0e1a2c;
+    --rail-border:#24384f;
+    --rail-hover:#1b2c46;
   }
 
   html[data-theme="light"]{
@@ -33,10 +43,15 @@
     --ink-300:#5b6b83;
     --accent-text:#132135;
     --chart-line:#ef6a5f;
+
+    --rail-bg:#e8eef6;
+    --rail-border:#d2dfee;
+    --rail-hover:#dae5f2;
   }
 
   .sr-only{
     position:absolute;
+    max-width:1px;
     width:1px;
     height:1px;
     padding:0;
@@ -45,6 +60,17 @@
     clip:rect(0,0,0,0);
     white-space:nowrap;
     border:0;
+  }
+  /* An auto-layout table sizes to its content and ignores the 1px width
+     above, so a visually-hidden table still widens the page on mobile. The
+     nowrap inherited from .sr-only also makes the <caption> force the table
+     wide — hidden content can wrap freely, screen readers read it either way. */
+  table.sr-only{
+    table-layout:fixed;
+  }
+  table.sr-only, table.sr-only *{
+    white-space:normal;
+    word-break:break-all;
   }
 
   html.auth-pending #authGate,
@@ -507,16 +533,18 @@
     align-items:center;
     justify-content:space-between;
     gap:8px;
-    padding:0 4px;
-    margin-bottom:14px;
+    padding:0 10px;
+    margin-bottom:10px;
   }
 
   .side-nav-title{
     font-family:var(--font-mono);
-    font-size:0.75rem;
-    letter-spacing:0.1em;
+    font-size:0.6875rem;
+    font-weight:700;
+    letter-spacing:0.12em;
     text-transform:uppercase;
     color:var(--ink-300);
+    opacity:0.8;
     white-space:nowrap;
     overflow:hidden;
   }
@@ -526,19 +554,19 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    width:26px;
-    height:26px;
-    border-radius:50%;
-    background:var(--navy-700);
-    border:1px solid var(--navy-600);
+    width:24px;
+    height:24px;
+    border-radius:8px;
+    background:transparent;
+    border:none;
     color:var(--ink-300);
     font-size:0.6875rem;
     cursor:pointer;
-    transition:border-color 0.15s, color 0.15s;
+    transition:background-color 0.15s, color 0.15s;
   }
   .side-nav-toggle:hover{
-    border-color:var(--sky-400);
-    color:var(--accent-text);
+    background:var(--rail-hover);
+    color:var(--ink-050);
   }
   .side-nav-toggle i{
     display:block;
@@ -546,10 +574,10 @@
   }
 
   .nav-icon{
-    width:28px;
-    height:28px;
-    border-radius:50%;
-    background:var(--navy-700);
+    width:26px;
+    height:26px;
+    border-radius:8px;
+    background:var(--rail-hover);
     display:flex;
     align-items:center;
     justify-content:center;
@@ -566,16 +594,16 @@
     list-style:none;
     display:flex;
     flex-direction:column;
-    gap:6px;
+    gap:2px;
   }
 
   .nav-item{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:11px;
     width:100%;
-    padding:12px 14px;
-    border-radius:12px;
+    padding:10px 12px;
+    border-radius:10px;
     font-size:0.9375rem;
     font-weight:500;
     color:var(--ink-300);
@@ -583,9 +611,22 @@
     border:1px solid transparent;
     transition:border-color 0.15s, color 0.15s, background-color 0.3s ease;
   }
-  .nav-item .nav-text{
+  /* Label and its "coming soon" badge stack in a column, so a long calculator
+     name keeps one line instead of wrapping around an inline badge. */
+  .nav-item .nav-body{
     flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:4px;
+  }
+  .nav-item .nav-text{
     text-align:left;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:100%;
   }
 
   .nav-item.active{
@@ -600,8 +641,10 @@
 
   .nav-item .soon{
     font-family:var(--font-mono);
-    font-size:0.6875rem;
-    background:var(--navy-600);
+    font-size:0.625rem;
+    font-weight:600;
+    letter-spacing:0.03em;
+    background:var(--rail-hover);
     color:var(--ink-300);
     padding:2px 7px;
     border-radius:20px;
@@ -612,26 +655,30 @@
   @media (min-width: 861px){
     .calculator-shell{
       display:flex;
-      align-items:flex-start;
+      align-items:stretch;
     }
     .side-nav{
       display:block;
-      flex:0 0 220px;
+      flex:0 0 276px;
       position:sticky;
-      top:96px;
-      /* Left edge lines up with the topnav's own padding (32px) instead of
-         adding extra inset on top of it. */
-      padding:56px 24px 40px 32px;
-      transition:flex-basis 0.25s ease;
+      top:var(--topnav-h);
+      align-self:flex-start;
+      /* Full remaining viewport height with its own scroll, so the rail reads
+         as fixed app chrome rather than a column of page content. */
+      height:calc(100vh - var(--topnav-h));
+      overflow-y:auto;
+      background:var(--rail-bg);
+      border-right:1px solid var(--rail-border);
+      padding:22px 14px 28px;
+      transition:flex-basis 0.25s ease, background-color 0.2s, border-color 0.2s;
     }
     .side-nav.collapsed{
-      flex:0 0 84px;
-      padding-left:16px;
-      padding-right:16px;
+      flex:0 0 72px;
+      padding-left:12px;
+      padding-right:12px;
     }
     .side-nav.collapsed .side-nav-title,
-    .side-nav.collapsed .nav-text,
-    .side-nav.collapsed .soon{
+    .side-nav.collapsed .nav-body{
       display:none;
     }
     .side-nav.collapsed .side-nav-head{
@@ -656,6 +703,8 @@
       /* Keep the auto side-margins so the content column centers itself
          within the space left of it, once its own max-width caps it. */
       margin:0 auto;
+      padding-left:32px;
+      padding-right:32px;
     }
   }
 
@@ -708,12 +757,184 @@
   @media (max-width: 860px){
     .bottom-nav{display:flex;}
     main{padding-bottom:104px;}
+    /* The bottom nav is fixed, so the footer needs to clear it too. */
+    .site-footer{margin-bottom:104px;}
   }
 
   @media (max-width: 640px){
     .topnav{padding:14px 18px;}
     #themeLabel{display:none;}
   }
+
+  /* Landing hero heading — deliberately a touch smaller than the global
+     h1 so the typed quote below still reads as the visual anchor. */
+  .landing-title{
+    font-size:2.5rem;
+    line-height:1.05;
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+  }
+  .landing-sub{
+    max-width:30rem;
+    margin:0 auto 34px;
+    font-size:0.9375rem;
+    line-height:1.5;
+    color:var(--ink-300);
+  }
+  @media (max-width: 640px){
+    .landing-title{font-size:2rem;}
+  }
+
+  /* Destructive account actions, kept visually separate from the save form
+     above so the two are never confused at a glance. */
+  .danger-zone{
+    border-color:rgba(239,106,95,0.4);
+    margin-top:28px;
+  }
+  .danger-zone h2{color:var(--red);}
+  .danger-btn{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:0.9375rem;
+    color:var(--red);
+    background:transparent;
+    border:1px solid var(--red);
+    border-radius:9px;
+    padding:13px 24px;
+    cursor:pointer;
+    transition:background-color 0.15s, color 0.15s;
+  }
+  .danger-btn:hover{
+    background:var(--red);
+    color:var(--navy-900);
+  }
+  .danger-btn:disabled{opacity:0.55; cursor:default;}
+  .danger-note{margin-top:16px; font-size:0.8125rem;}
+  .danger-note a{color:var(--accent-text); font-weight:600;}
+
+  /* Brief pulse when the 3D cupboard sends you to the savings field, so the
+     jump has a visible destination rather than just moving the caret. */
+  @keyframes field-flash{
+    0%   { box-shadow:0 0 0 0 rgba(92,182,249,0.55); }
+    70%  { box-shadow:0 0 0 10px rgba(92,182,249,0); }
+    100% { box-shadow:0 0 0 0 rgba(92,182,249,0); }
+  }
+  .field.field-flash input{
+    border-color:var(--sky-400);
+    animation:field-flash 1.2s ease-out;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .field.field-flash input{animation:none; border-color:var(--sky-400);}
+  }
+
+  /* ---------- My details: split layout ----------
+     Same structure as the sign-in page — scene on one side, content on the
+     other. A full-bleed scene behind the form was tried and rejected: it
+     competed with the inputs on a page that is, in the end, a settings form. */
+  .details-split{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    align-items:stretch;
+  }
+  /* Sticky, and exactly one viewport tall. Without this the panel stretches to
+     match the form column, the diorama centres itself in that much taller box,
+     and half of it ends up below the fold. */
+  .details-illustration{
+    position:sticky;
+    top:var(--topnav-h);
+    align-self:start;
+    height:calc(100vh - var(--topnav-h));
+    overflow:hidden;
+    background:linear-gradient(155deg, var(--navy-800) 0%, var(--navy-700) 100%);
+  }
+  .details-illustration canvas{
+    position:absolute;
+    inset:0;
+    display:block;
+    width:100%;
+    height:100%;
+  }
+  /* The content column scrolls independently of the sticky scene. */
+  .details-split main{
+    max-width:none;
+    width:100%;
+    padding:48px 32px 80px;
+  }
+  .details-split main .card{max-width:520px; margin-left:auto; margin-right:auto;}
+
+  @media (max-width: 860px){
+    .details-split{grid-template-columns:1fr;}
+    .details-illustration{display:none;}
+    .details-split main{padding:36px 20px 104px;}
+  }
+
+  /* ---------- Legal pages (privacy / terms / disclaimer) ---------- */
+  /* Long-form prose, so these override main's centred, narrow defaults. */
+  .legal{
+    max-width:44rem;
+    text-align:left;
+  }
+  .legal h1{margin-bottom:12px;}
+  .legal .legal-lede{
+    font-size:1.0625rem;
+    color:var(--ink-300);
+    margin-bottom:10px;
+  }
+  .legal .legal-meta{
+    font-size:0.8125rem;
+    color:var(--ink-300);
+    opacity:0.8;
+    margin-bottom:36px;
+    padding-bottom:22px;
+    border-bottom:1px solid var(--navy-600);
+  }
+  .legal h2{
+    font-family:var(--font-display);
+    font-size:1.1875rem;
+    font-weight:700;
+    margin:34px 0 10px;
+  }
+  .legal h3{
+    font-family:var(--font-display);
+    font-size:0.9375rem;
+    font-weight:600;
+    color:var(--accent-text);
+    margin:22px 0 8px;
+  }
+  .legal p{
+    font-size:0.9375rem;
+    line-height:1.65;
+    color:var(--ink-300);
+    margin-bottom:14px;
+  }
+  .legal ul{
+    margin:0 0 16px;
+    padding-left:22px;
+  }
+  .legal li{
+    font-size:0.9375rem;
+    line-height:1.6;
+    color:var(--ink-300);
+    margin-bottom:9px;
+  }
+  .legal strong{color:var(--ink-050); font-weight:600;}
+  .legal a{
+    color:var(--accent-text);
+    font-weight:600;
+    border-bottom:1px solid transparent;
+  }
+  .legal a:hover{border-bottom-color:currentColor;}
+
+  /* The one thing on the disclaimer a reader must not skim past. */
+  .legal-callout{
+    background:var(--navy-700);
+    border:1px solid var(--navy-600);
+    border-left:3px solid var(--orange);
+    border-radius:10px;
+    padding:18px 22px;
+    margin-bottom:8px;
+  }
+  .legal-callout p{margin-bottom:0;}
 
   /* ---------- Main ---------- */
   main{
@@ -736,6 +957,9 @@
   }
   .card-grid > .card{
     flex:1 1 380px;
+    /* Without this a flex item refuses to shrink below its content's
+       min-content width, which pushed the card past the viewport on phones. */
+    min-width:0;
     max-width:700px;
     margin-bottom:0;
   }
@@ -743,9 +967,18 @@
     flex-basis:100%;
     max-width:100%;
   }
+  /* The formula card carries the widest content on the page, so it asks for
+     more of the row than the others — otherwise three cards share one row and
+     the formulas end up scrolling on a full-size desktop. */
+  .card-grid > .card.signature{
+    flex-basis:520px;
+  }
 
   @media (max-width: 640px){
     main{padding:36px 20px 104px;}
+    /* 32px of padding on each side is a big share of a phone screen. */
+    .card{padding:24px 16px;}
+    .card-grid{gap:20px;}
   }
 
   .eyebrow{
@@ -989,7 +1222,9 @@
   .card.signature .threshold-note{color:var(--brand-dark); opacity:0.85;}
   .card.signature .threshold-note strong{color:var(--brand-dark); opacity:1;}
 
-  .card h2{
+  .card h2,
+  .card .card-title,
+  .auth-gate .card h1{
     font-family:var(--font-display);
     font-size:1rem;
     font-weight:600;
@@ -1002,7 +1237,10 @@
   .formula{
     display:flex;
     align-items:center;
-    justify-content:center;
+    /* Centred via auto margins rather than justify-content: a centred flex
+       container clips its own overflow on the left, putting the start of the
+       formula out of reach once it's wide enough to scroll. */
+    justify-content:flex-start;
     gap:16px;
     font-family:var(--font-mono);
     font-size:1.0625rem;
@@ -1012,6 +1250,13 @@
     max-width:100%;
     overflow-x:auto;
   }
+  /* A formula can't reflow, so it scrolls as a unit. Without this the parts
+     shrink and overlap each other instead of overflowing into that scroll. */
+  .formula > *{
+    flex-shrink:0;
+  }
+  .formula > *:first-child{margin-left:auto;}
+  .formula > *:last-child{margin-right:auto;}
 
   @media (max-width: 480px){
     .formula{font-size:0.9375rem;}
@@ -1039,7 +1284,10 @@
 
   .var-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    /* min() lets the track fall below its 220px floor once the container is
+       narrower than that, so the grid collapses to one column instead of
+       forcing the card wider than the screen. */
+    grid-template-columns:repeat(auto-fit, minmax(min(220px, 100%), 1fr));
     gap:12px 24px;
     margin-top:8px;
     max-width:560px;
@@ -1081,7 +1329,7 @@
   /* Calculator */
   .field-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(min(230px, 100%), 1fr));
     gap:20px;
     margin-bottom:8px;
   }
@@ -1136,6 +1384,71 @@
   .field.error .error-msg{
     display:block;
   }
+
+  /* Shown under a result only when nobody is signed in — the one thing an
+     account buys you, offered where the result is worth keeping. */
+  .save-prompt{
+    display:none;
+    margin-top:16px;
+    font-size:0.8125rem;
+    color:var(--ink-300);
+  }
+  .save-prompt.show{display:block;}
+  .save-prompt a{
+    color:var(--accent-text);
+    font-weight:600;
+  }
+  .save-prompt a:hover{text-decoration:underline;}
+
+  /* ---------- Saved user details ---------- */
+  .field-hint{
+    font-size:0.7188rem;
+    color:var(--ink-300);
+    line-height:1.35;
+  }
+
+  .profile-intro{
+    margin-bottom:22px;
+  }
+
+  .profile-status{
+    display:none;
+    margin-top:16px;
+    font-size:0.8125rem;
+    font-weight:500;
+    text-align:center;
+    color:var(--green);
+  }
+  .profile-status.show{display:block;}
+  .profile-status.error{color:var(--red);}
+
+  /* Sits above the calculator's fields when values arrived from the saved
+     profile, so a prefilled number is never mistaken for one the user typed. */
+  .prefill-notice{
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:18px;
+    padding:9px 14px;
+    border-radius:10px;
+    background:var(--navy-700);
+    border:1px solid var(--navy-600);
+    font-size:0.75rem;
+    color:var(--ink-300);
+    text-align:left;
+  }
+  .prefill-notice.show{display:flex;}
+  .prefill-notice i{
+    color:var(--accent-text);
+    flex-shrink:0;
+  }
+  .prefill-notice a{
+    color:var(--accent-text);
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .prefill-notice a:hover{text-decoration:underline;}
 
   .actions{
     display:flex;
@@ -1524,6 +1837,11 @@
 
   .chart-canvas{
     position:relative;
+    /* Empty until renderTrendChart() fills it. Reserving the SVG's own ratio
+       up front means a slow script can't collapse the box and shift the page
+       below it — measured CLS is fine locally, but script.js is deferred and
+       this removes the timing dependency on slower connections. */
+    aspect-ratio:440 / 240;
   }
   .trend-chart-svg{
     display:block;
@@ -2109,6 +2427,20 @@
     font-size:0.8125rem;
     color:var(--ink-300);
     white-space:nowrap;
+  }
+
+  /* On a phone the check name wraps and the nowrap value gets pushed past the
+     row's edge, so the pair stacks instead — value indented to sit under the
+     name rather than under its pass/fail icon. */
+  @media (max-width: 640px){
+    .rec-check-row{
+      flex-direction:column;
+      align-items:flex-start;
+      gap:2px;
+    }
+    .rec-check-value{
+      padding-left:30px;
+    }
   }
 
   /* Classification table */

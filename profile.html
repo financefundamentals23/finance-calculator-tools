@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en-IN" data-theme="dark" class="auth-pending">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Details | Finance Fundamentals</title>
+<meta name="description" content="Your saved monthly figures, reused across every Finance Fundamentals calculator.">
+<link rel="canonical" href="https://financefundamentals.app/profile.html">
+<meta name="robots" content="noindex,follow">
+<script>
+  var savedTheme = localStorage.getItem('theme');
+  if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
+</script>
+<link rel="icon" type="image/svg+xml" href="ff-logo.svg">
+<!-- Google Analytics (GA4). Measurement ID matches the one already in
+     firebase-auth.js's config. async so it never blocks render. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-31JDZRNZZJ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-31JDZRNZZJ');
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/solid.min.css">
+<link rel="stylesheet" href="styles.css?v=62">
+</head>
+<body class="details-page">
+<div class="shell">
+
+  <header class="topnav">
+    <a class="brand" href="index.html">
+      <div class="mark">
+        <span class="big">F</span>
+        <span class="small">f</span>
+      </div>
+      <div class="brand-text">
+        <span class="name">Finance Fundamentals</span>
+      </div>
+    </a>
+
+    <ul class="topnav-links">
+      <li><a class="topnav-link" href="index.html">Home</a></li>
+      <li><a class="topnav-link" href="calculators.html">Finance Calculator</a></li>
+    </ul>
+
+    <div class="topnav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+        <i class="fa-solid fa-moon" id="themeIcon"></i>
+        <span id="themeLabel">Dark mode</span>
+      </button>
+
+      <div class="auth-controls">
+        <a class="auth-signin" id="authSignedOut" href="login.html">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign in
+        </a>
+        <div class="auth-menu" id="authSignedIn">
+          <button type="button" class="auth-user-toggle" id="authUserToggle" aria-haspopup="true" aria-expanded="false">
+            <img class="auth-avatar" id="authUserAvatar" alt="" referrerpolicy="no-referrer">
+            <div class="auth-avatar auth-avatar-fallback" id="authUserAvatarFallback"></div>
+            <span id="authUserName"></span>
+            <i class="fa-solid fa-chevron-down auth-caret"></i>
+          </button>
+          <div class="auth-dropdown" id="authDropdown" role="menu">
+            <a class="auth-dropdown-item" role="menuitem" href="profile.html">
+              <i class="fa-solid fa-sliders"></i> <span>My details</span>
+            </a>
+            <button type="button" class="auth-dropdown-item" role="menuitem" onclick="toggleTheme()">
+              <i class="fa-solid fa-moon" id="menuThemeIcon"></i> <span id="menuThemeLabel">Dark mode</span>
+            </button>
+            <div class="auth-dropdown-divider"></div>
+            <button type="button" class="auth-dropdown-item auth-dropdown-item-danger" role="menuitem" onclick="signOutUser()">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function(){
+          try{
+            var cached = JSON.parse(localStorage.getItem('ffCachedUser') || 'null');
+            if(!cached) return;
+            var signedOut = document.getElementById('authSignedOut');
+            var signedIn = document.getElementById('authSignedIn');
+            var themeToggle = document.getElementById('themeToggle');
+            var nameEl = document.getElementById('authUserName');
+            var avatarEl = document.getElementById('authUserAvatar');
+            var avatarFallbackEl = document.getElementById('authUserAvatarFallback');
+            var displayName = cached.displayName || cached.email || 'Signed in';
+            if(signedOut) signedOut.style.display = 'none';
+            if(signedIn) signedIn.style.display = 'flex';
+            if(themeToggle) themeToggle.style.display = 'none';
+            if(nameEl) nameEl.textContent = displayName;
+            if(cached.photoURL){
+              if(avatarEl){ avatarEl.src = cached.photoURL; avatarEl.style.display = ''; }
+              if(avatarFallbackEl) avatarFallbackEl.classList.remove('show');
+            } else {
+              if(avatarEl) avatarEl.style.display = 'none';
+              if(avatarFallbackEl){
+                avatarFallbackEl.textContent = displayName.charAt(0).toUpperCase();
+                avatarFallbackEl.classList.add('show');
+              }
+            }
+          }catch(e){}
+        })();
+      </script>
+    </div>
+  </header>
+
+  <div class="auth-loader"><div class="spinner"></div></div>
+
+  <div class="auth-gate" id="authGate">
+    <div class="card">
+      <p class="card-title">Sign in required</p>
+      <p class="lede">Sign in to save your details.</p>
+      <div class="actions">
+        <a class="calc" href="login.html">Sign In</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="gatedContent">
+  <div class="details-split">
+    <div class="details-illustration" aria-hidden="true">
+      <!-- Interior view of the same world as the sign-in diorama, built from
+           primitives at runtime in details-scene.js. Transparent canvas, so the
+           panel gradient below stays the fallback if WebGL is unavailable. -->
+      <canvas id="detailsCanvas"></canvas>
+    </div>
+
+  <main>
+    <h1>My Details</h1>
+    <p class="lede">Your recurring financial figures, saved once and filled in for you every time you open a calculator</p>
+
+    <div class="card">
+      <h2>Your Monthly Figures</h2>
+
+      <p class="threshold-note profile-intro">
+        These are the numbers that stay roughly the same from one calculation to the next.
+        Anything specific to a single purchase — the price, and how far off it is — you'll
+        still enter in the calculator itself.
+      </p>
+
+      <div class="field-grid">
+        <div class="field" id="field-pS">
+          <label for="pS">Liquid savings (S)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="pS" placeholder="e.g. 6,00,000">
+          <span class="field-hint">Cash you could access right now</span>
+        </div>
+        <div class="field" id="field-pE">
+          <label for="pE">Essential monthly expenses (E)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="pE" placeholder="e.g. 40,000">
+          <span class="field-hint">Rent, food, bills — the unavoidable ones</span>
+        </div>
+        <div class="field" id="field-pI">
+          <label for="pI">Monthly take-home income (I)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="pI" placeholder="e.g. 1,20,000">
+          <span class="field-hint">After tax, as it lands in your account</span>
+        </div>
+        <div class="field" id="field-pD">
+          <label for="pD">Existing monthly debt payments (D)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="pD" placeholder="e.g. 15,000">
+          <span class="field-hint">EMIs, loans, card repayments</span>
+        </div>
+        <div class="field" id="field-pM">
+          <label for="pM">Monthly savings / investment target (M)</label>
+          <input type="text" inputmode="decimal" class="num-input" id="pM" placeholder="e.g. 20,000">
+          <span class="field-hint">What you aim to set aside each month</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="calc" id="profileSaveBtn" onclick="saveProfileDetails()">Save details</button>
+        <button class="reset" onclick="clearProfileDetails()">Clear all</button>
+      </div>
+
+      <p class="profile-status" id="profileStatus"></p>
+    </div>
+
+    <div class="card danger-zone">
+      <h2>Delete your account</h2>
+      <p class="threshold-note">This removes your saved calculations, the details above,
+        and your account itself — permanently, and all at once. There is no undo, and no
+        way to recover the data afterwards.</p>
+      <div class="actions">
+        <button class="danger-btn" id="deleteAccountBtn" onclick="deleteAccountAndData()">
+          Delete my account and data
+        </button>
+      </div>
+      <p class="threshold-note danger-note">Prefer to remove just one calculation? Delete
+        it from your history on the <a href="calculators.html">calculator page</a> instead.</p>
+    </div>
+  </main>
+  </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="calculators.html">Finance Calculator</a>
+      <a href="disclaimer.html">Disclaimer</a>
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+    </div>
+    <p>&copy; 2026 Finance Fundamentals. All rights reserved.</p>
+  </footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
+<script src="firebase-auth.js?v=10" defer></script>
+<script src="script.js?v=30" defer></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="details-scene.js?v=10"></script>
+</body>
+</html>

@@ -15,6 +15,12 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const C = {
   navy:      0x132135,
@@ -59,6 +65,18 @@ function init(canvas, host) {
   renderer.toneMappingExposure = 1.15;
 
   const scene = new THREE.Scene();
+
+  /* Image-based lighting. RoomEnvironment is a procedural studio box that ships
+     with three, so this costs no download — but it's what does the heavy
+     lifting: every surface picks up soft directional fill and gentle corner
+     falloff instead of the flat wash three point lights give you. Baked once
+     into a PMREM cube, then the source is thrown away. */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+  scene.environment = envRT.texture;
+  scene.environmentIntensity = 0.34;
+  pmrem.dispose();
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 140);
   camera.position.set(20.5, 15, 20.5);
@@ -113,35 +131,74 @@ function init(canvas, host) {
   }
 
   /* ------------------------------------------------------------------ lights */
-  const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+  /* With IBL carrying the fill, the flat ambient drops right down — it was
+     washing out exactly the shading gradients that make the render read as
+     three-dimensional. */
+  const ambient = new THREE.AmbientLight(0xffffff, 0.045);
   scene.add(ambient);
 
-  const hemi = new THREE.HemisphereLight(0xffffff, C.navyMid, 1.15);
+  const hemi = new THREE.HemisphereLight(0xffffff, C.navyMid, 0.14);
   scene.add(hemi);
 
-  const key = new THREE.DirectionalLight(0xffffff, 2.5);
-  key.position.set(9, 15, 11);
+  /* Raking rather than overhead: a lower, more side-on key separates the two
+     walls into distinct values and throws object shadows across the floor,
+     which is what grounds everything. */
+  const key = new THREE.DirectionalLight(0xfff4e8, 3.6);
+  key.position.set(10.5, 8.5, 8.5);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(3072, 3072);
   key.shadow.camera.near = 1;
   key.shadow.camera.far = 50;
-  key.shadow.camera.left = -13;
-  key.shadow.camera.right = 13;
-  key.shadow.camera.top = 13;
-  key.shadow.camera.bottom = -13;
-  key.shadow.bias = -0.0012;
-  key.shadow.normalBias = 0.025;
+  key.shadow.camera.left = -8.5;
+  key.shadow.camera.right = 8.5;
+  key.shadow.camera.top = 8.5;
+  key.shadow.camera.bottom = -8.5;
+  key.shadow.bias = -0.0006;
+  key.shadow.normalBias = 0.018;
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(C.skyPale, 0.55);
+  const fill = new THREE.DirectionalLight(C.skyPale, 0.42);
   fill.position.set(-10, 7, 6);
   scene.add(fill);
+
+  /* Coloured bounce from below — the trick that gives reference renders their
+     candy warmth, standing in for light kicking back off the floor. */
+  const bounce = new THREE.DirectionalLight(C.coral, 0.30);
+  bounce.position.set(-6, -4, -8);
+  scene.add(bounce);
+
+  /* ---------------------------------------------------- ambient occlusion pass
+     Real-time lighting can't work out that a corner is enclosed, so corners stay
+     as bright as open floor and the scene reads flat. GTAO samples the depth
+     buffer to darken creases and contact points — the single biggest step toward
+     the look of an offline render. The composer keeps an alpha buffer so the
+     canvas stays transparent over the panel gradient. */
+  let composer = null, gtao = null;
+  function buildComposer() {
+    const w = Math.max(1, host.clientWidth), h = Math.max(1, host.clientHeight);
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    gtao = new GTAOPass(scene, camera, w, h);
+    gtao.output = GTAOPass.OUTPUT.Default;
+    gtao.updateGtaoMaterial({
+      radius: 0.32,
+      distanceExponent: 1.4,
+      thickness: 1.0,
+      scale: 1.1,
+      samples: 16,
+      screenSpaceRadius: false
+    });
+    composer.addPass(gtao);
+    composer.addPass(new OutputPass());
+    composer.setSize(w, h);
+  }
 
   /* ------------------------------------------------------------- build tools */
   const materials = [];
   function mat(color, opts) {
     const m = new THREE.MeshStandardMaterial(
-      Object.assign({ color, roughness: 0.88, metalness: 0 }, opts || {})
+      Object.assign({ color, roughness: 0.7, metalness: 0, envMapIntensity: 1.0 },
+                    opts || {})
     );
     materials.push(m);
     return m;
@@ -158,11 +215,17 @@ function init(canvas, host) {
     (parent || room).add(mesh);
     return mesh;
   }
+  /* Every edge gets a small fillet. Hard 90-degree corners are what make
+     primitive-built scenes read as programmer art — a bevel catches a highlight
+     along each edge and the whole thing reads as moulded instead of assembled.
+     The radius has to stay under half the thinnest side or the geometry
+     inverts, and some pieces here are 0.02 deep, so it scales per box. */
   function box(w, h, d, color, x, y, z, parent) {
-    return add(new THREE.BoxGeometry(w, h, d), mat(color), x, y, z, parent);
+    const r = Math.min(0.055, Math.min(w, h, d) * 0.34);
+    return add(new RoundedBoxGeometry(w, h, d, 3, r), mat(color), x, y, z, parent);
   }
   function cyl(rt, rb, h, color, x, y, z, seg, parent) {
-    return add(new THREE.CylinderGeometry(rt, rb, h, seg || 24), mat(color), x, y, z, parent);
+    return add(new THREE.CylinderGeometry(rt, rb, h, seg || 40), mat(color), x, y, z, parent);
   }
 
   /* --------------------------------------------------------- room + plinth */
@@ -196,7 +259,7 @@ function init(canvas, host) {
 
   // Monitor, angled slightly toward the camera.
   box(0.8, 0.08, 0.55, C.navyLight, deskX, 1.64, deskZ - 0.3);
-  cyl(0.08, 0.08, 0.75, C.navyLight, deskX, 2.02, deskZ - 0.3, 16);
+  cyl(0.08, 0.08, 0.75, C.navyLight, deskX, 2.02, deskZ - 0.3, 32);
   const monitor = box(2.2, 1.34, 0.11, C.navy, deskX, 2.78, deskZ - 0.3);
   monitor.rotation.x = -0.07;
   const screen = new THREE.Mesh(
@@ -229,7 +292,7 @@ function init(canvas, host) {
   box(1.05, 0.2, 1.0, C.orange, 0, 1.08, 0, chair);
   const backRest = box(1.05, 1.05, 0.18, C.orange, 0, 1.68, 0.46, chair);
   backRest.rotation.x = 0.13;
-  cyl(0.1, 0.1, 0.92, C.navyLight, 0, 0.6, 0, 16, chair);
+  cyl(0.1, 0.1, 0.92, C.navyLight, 0, 0.6, 0, 32, chair);
   for (let i = 0; i < 5; i++) {
     const a = (i / 5) * Math.PI * 2;
     const leg = box(0.66, 0.1, 0.15, C.navyLight, Math.cos(a) * 0.33, 0.17, Math.sin(a) * 0.33, chair);
@@ -270,7 +333,7 @@ function init(canvas, host) {
   const dial = add(new THREE.TorusGeometry(0.26, 0.075, 12, 26), mat(C.yellow), 0, 0.85, 0.85, vault);
   dial.rotation.x = Math.PI / 2;
   dial.rotation.z = Math.PI / 2;
-  cyl(0.09, 0.09, 0.2, C.yellow, 0, 0.85, 0.88, 14, vault).rotation.x = Math.PI / 2;
+  cyl(0.09, 0.09, 0.2, C.yellow, 0, 0.85, 0.88, 28, vault).rotation.x = Math.PI / 2;
 
   /* -------------------------------------------------------------- the coins */
   const coinStack = new THREE.Group();
@@ -284,7 +347,7 @@ function init(canvas, host) {
   cyl(0.44, 0.44, 0.13, C.orange, -0.55, 0.07, 1.05, 26);
 
   /* -------------------------------------------------------------- the plant */
-  const pot = cyl(0.44, 0.34, 0.62, C.coral, -3.9, 0.31, 3.5, 20);
+  const pot = cyl(0.44, 0.34, 0.62, C.coral, -3.9, 0.31, 3.5, 36);
   pot.castShadow = true;
   add(new THREE.CapsuleGeometry(0.32, 1.15, 6, 16), mat(C.green), -3.9, 1.35, 3.5);
   const armL = add(new THREE.CapsuleGeometry(0.17, 0.5, 5, 14), mat(C.green), -4.32, 1.6, 3.5);
@@ -304,8 +367,8 @@ function init(canvas, host) {
   const lamp = new THREE.Group();
   lamp.position.set(4.3, 0, -3.9);
   room.add(lamp);
-  cyl(0.42, 0.5, 0.14, C.navyLight, 0, 0.07, 0, 24, lamp);
-  cyl(0.07, 0.07, 2.9, C.navyLight, 0, 1.5, 0, 14, lamp);
+  cyl(0.42, 0.5, 0.14, C.navyLight, 0, 0.07, 0, 40, lamp);
+  cyl(0.07, 0.07, 2.9, C.navyLight, 0, 1.5, 0, 28, lamp);
   add(new THREE.ConeGeometry(0.6, 0.72, 24, 1, true),
     new THREE.MeshStandardMaterial({ color: C.orange, roughness: 0.8, side: THREE.DoubleSide }),
     0, 3.2, 0, lamp);
@@ -414,9 +477,10 @@ function init(canvas, host) {
   // so the diorama sits correctly on a white panel or a navy one.
   function applyTheme() {
     const dark = document.documentElement.getAttribute('data-theme') !== 'light';
-    ambient.intensity = dark ? 0.85 : 1.05;
-    hemi.intensity = dark ? 1.15 : 1.35;
-    renderer.toneMappingExposure = dark ? 1.15 : 1.28;
+    ambient.intensity = dark ? 0.045 : 0.075;
+    hemi.intensity = dark ? 0.14 : 0.20;
+    scene.environmentIntensity = dark ? 0.34 : 0.42;
+    renderer.toneMappingExposure = dark ? 1.15 : 1.24;
   }
   applyTheme();
   new MutationObserver(applyTheme).observe(document.documentElement, {
@@ -424,12 +488,15 @@ function init(canvas, host) {
   });
 
   /* ------------------------------------------------------- size + run loop */
+  buildComposer();
+
   function resize() {
     const w = host.clientWidth, h = host.clientHeight;
     if (!w || !h) return false;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setSize(w, h, false);
+    if (composer) composer.setSize(w, h);
     return true;
   }
 
@@ -451,7 +518,7 @@ function init(canvas, host) {
     }
     drift(dt);
     controls.update();
-    renderer.render(scene, camera);
+    if (composer) composer.render(); else renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
   function start() {

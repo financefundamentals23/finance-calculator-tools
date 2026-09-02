@@ -24,7 +24,7 @@ function signInWithGoogle(){
 function signOutUser(){
   showConfirm({
     title: 'Sign out?',
-    message: "You'll need to sign in again to use the calculator.",
+    message: "You'll need to sign in again to save calculations or edit your details.",
     confirmText: 'Sign out',
     cancelText: 'Cancel',
     danger: true
@@ -202,6 +202,8 @@ function applyAuthUI(user){
     }catch(e){}
 
     if(typeof loadCalculatorHistory === 'function') loadCalculatorHistory();
+    if(typeof loadProfileDetails === 'function') loadProfileDetails();
+    if(typeof prefillCalculatorFromProfile === 'function') prefillCalculatorFromProfile();
   } else {
     if(signedOut) signedOut.style.display = 'flex';
     if(signedIn) signedIn.style.display = 'none';
@@ -212,6 +214,7 @@ function applyAuthUI(user){
     try{ localStorage.removeItem('ffCachedUser'); }catch(e){}
 
     if(typeof loadCalculatorHistory === 'function') loadCalculatorHistory();
+    if(typeof loadProfileDetails === 'function') loadProfileDetails();
   }
 
   document.documentElement.classList.remove('auth-pending');

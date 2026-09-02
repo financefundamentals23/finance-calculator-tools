@@ -8,7 +8,8 @@
       "Bash(grep -n \"Calculate Your Score\\\\|id=\\\\\"result\\\\\"\\\\|How To Read The Score\\\\|</div>\\\\s*$\" /Users/rohiths/finance-fundamentals-git-repos/finance-calculator-tools/calculators.html)",
       "Bash(sed -i '' 's/styles\\\\.css?v=38/styles.css?v=39/' *.html)",
       "Bash(sed -i '' 's/script\\\\.js?v=27/script.js?v=28/' login.html)",
-      "Bash(sed -i '' 's/styles\\\\.css?v=39/styles.css?v=40/' *.html && grep -n \"styles.css?v=\" *.html)"
+      "Bash(sed -i '' 's/styles\\\\.css?v=39/styles.css?v=40/' *.html && grep -n \"styles.css?v=\" *.html)",
+      "Bash(perl -0pi -e 's/      top:65px;\\\\n/      top:var\\(--topnav-h\\);\\\\n/; s/      height:calc\\\\\\(100vh - 65px\\\\\\);/      height:calc\\(100vh - var\\(--topnav-h\\)\\);/' styles.css)"
     ]
   }
 }

@@ -10,10 +10,18 @@ everything from scratch.
 /index.html         — landing page (hero + CTA into the calculator)
 /calculators.html   — the calculator app (formula switcher + Affordability Index today;
                        future formulas join the same page/nav, per the design language below)
-/styles.css         — all styling, shared by both pages
-/script.js          — all calculator + recommendation logic, shared by both pages
+/login.html         — sign in / sign up (Firebase Auth, Google + email/password)
+/profile.html       — "My details": saved S/E/I/D/M reused across calculators
+/styles.css         — all styling, shared by every page
+/script.js          — all calculator + recommendation + profile logic, shared by every page
+/firebase-auth.js   — Firebase init, auth flows, and the shared applyAuthUI()
+/room-scene.js      — Three.js diorama on the login page only
+/ff-logo.svg        — favicon / brand mark
+/og-image.png       — 1200x630 social share card (referenced by og:image on the two
+                       indexable pages; regenerate if the brand or headline changes)
+/robots.txt, /sitemap.xml, /CNAME, /.nojekyll  — SEO + GitHub Pages hosting
 ```
-All files must stay in the same folder — both HTML pages reference `styles.css`/`script.js`
+All files must stay in the same folder — every page references `styles.css`/`script.js`
 by relative path. `script.js` is written to be safe to include on pages that don't have every
 element it looks for (e.g. `index.html` has no calculator form), so it no-ops harmlessly
 where markup is missing rather than erroring.
@@ -111,7 +119,117 @@ that triggered it, with pass/fail icons and current value vs. healthy benchmark.
 - More red (fail) than green (pass) → red
 - At least 1 red, but not a majority → orange
 
+## The 3D scenes
+
+Both are compact corner-cut rooms on a floating plinth, seen from outside on a long lens:
+`room-scene.js` (sign-in) is the games corner, `details-scene.js` (My details) is the
+study. They share a visual language — brand palette, clay materials, `RoundedBoxGeometry`
+bevels, `RoomEnvironment` image-based lighting, and a `GTAOPass` for corner occlusion —
+and both need the `three/addons/` importmap in their page.
+
+Two interior treatments were tried for My details and rejected: a close view of a desk
+read as "a table" rather than a room, and a full-length room interior needed heavy fog for
+depth, which in light mode repainted every surface near-white. **A diorama needs no fog** —
+don't add it back.
+
+The details room's one narrative object is the cupboard with a money tree on top — coins
+for leaves, and stacks climbing beside it. It replaced a standalone floor plant, and the
+desk's coin stack was removed when it arrived, so the money reads as one idea in one place
+rather than scattered decoration. Keep that discipline when adding props: the room is 9x9
+and reads as clutter quickly.
+
+**Two objects in the details room are clickable**: the floor lamp toggles the site theme,
+and the cupboard focuses the Liquid savings field and flashes it. Both are deliberately
+*redundant* — the theme toggle is in the nav and the field is right there on the page — so
+the panel can keep `aria-hidden="true"` without hiding any unique function, which matters
+because it is also `display:none` below 860px. **Never make the canvas the only route to
+something.** Thin objects need an invisible hit proxy (see `lampHit`); the lamp pole is
+0.05 units across and is otherwise almost unclickable.
+
+The idle drift must stay **bounded** (the sign-in scene oscillates between limits; the
+details scene uses a clamped sine). Both rooms are open on only two sides, so a full orbit
+swings the solid walls to the front and hides everything inside.
+
+Three things that bite if you change them:
+
+- **Size the canvas from a `ResizeObserver` on its host, never from a one-shot call.**
+  Both modules run while the page is still `auth-pending`, so the panel measures 0x0 and
+  the sizing call bails. Without the observer the canvas keeps its 300x150 HTML default
+  and gets stretched across the panel — which reads as a badly blurred render, not as a
+  sizing bug. `room-scene.js` had this right; `details-scene.js` was written without it
+  and shipped blurred until someone looked at the drawing buffer.
+
+- **Lighting is set in two places.** `applyTheme()` writes `ambient`/`hemi` intensities on
+  every theme change, so editing the values at light-creation time alone does nothing —
+  `applyTheme` silently overwrites them. Change both.
+- **`details-scene.js` solves its camera distance from the panel's aspect ratio**
+  (`frameCamera()`), because the details column is extremely portrait and any fixed
+  distance crops badly. Fog is derived from that same distance, so the two can't drift
+  apart and fog the scene to black.
+
+A full-bleed immersive backdrop was built for My details and rejected — it competed with
+the form. The page uses the same 50/50 split as sign-in.
+
+## Legal pages & account deletion
+
+`privacy.html`, `terms.html` and `disclaimer.html` are indexable trust pages, linked from
+the footer on every page. They are **drafts written against the code, not reviewed by a
+lawyer**, and they carry a `[CONTACT EMAIL]` placeholder that must be filled before launch.
+
+The privacy policy makes specific factual claims about what is stored — the `history`,
+`profiles` and `feedback` collections, their exact fields, the three `localStorage` keys,
+and GA4. **If you change what the code collects, update the policy in the same commit**,
+or it becomes untrue.
+
+`deleteAccountAndData()` in `script.js` implements the erasure right the policy promises.
+Firestore has no cascading delete, so it clears `history` and `profiles/{uid}` explicitly
+and deletes the auth user **last** — deleting the credential first would orphan the
+documents beyond reach. It handles `auth/requires-recent-login`, which Firebase raises when
+the session is not fresh. Feedback documents are deliberately not deleted (they can be
+anonymous, and outlive accounts); the policy says so and offers removal by email.
+
+## SEO & hosting
+
+Deploys to GitHub Pages at the custom domain `financefundamentals.app` (`CNAME` in the repo
+root). `index.html` and `calculators.html` are the only indexable pages; `login.html` and
+`profile.html` carry `robots: noindex,follow` — deliberately *not* a `robots.txt` Disallow,
+since a Disallow would stop Google fetching them and therefore ever seeing the noindex.
+
+Structured data is JSON-LD at the end of `<head>`: Organization + WebSite + FAQPage on
+`index.html`, WebApplication + BreadcrumbList on `calculators.html`. The FAQPage answer text
+must stay **verbatim identical** to the visible `<details>` copy, or the markup is
+non-compliant — if you edit an FAQ, edit both.
+
+**The calculator is deliberately open to anonymous visitors.** It has no auth gate: signing
+in only adds saved history and My details. This is what makes the page indexable at all —
+Googlebot is never signed in, so gating it would leave the page's entire crawlable content
+as the words "Sign In Required". Do not reintroduce `#authGate`/`#gatedContent` or the
+`auth-pending` class to `calculators.html`. `applyAuthUI()` null-guards every gate reference,
+so a page without that markup needs no special-casing. `profile.html` keeps its gate.
+
+Analytics is GA4 via the standard `gtag.js` snippet in each page's `<head>`, using the same
+`G-31JDZRNZZJ` measurement ID that already sits in the Firebase config. It is duplicated
+across all four heads (as the rest of the head already is) — change it in all four or none.
+Note the site has no privacy policy yet; one is needed before this collects traffic at scale,
+since the site also stores emails, Google profile data, and financial figures.
+
 ## Known intentional decisions worth knowing before changing anything
+
+- **`?v=NN` is a deploy mechanism, not a dev one — do not bump it to see your own edits.**
+  Bump it once per release, in **every** HTML file at once, so returning visitors don't get
+  a stale stylesheet. Half-doing it produces genuinely confusing bugs where the served file
+  and the executing code disagree.
+
+  Locally you never need to touch it: `.claude/devserver.py` (wired into
+  `.claude/launch.json`) serves with `Cache-Control: no-store` and strips
+  `If-Modified-Since`, so a plain reload always shows the current file. The stock
+  `python3 -m http.server` does **not** — it answers 304 Not Modified and the browser keeps
+  the old copy, which is how `styles.css` drifted 21 versions in a single session and how
+  a stale `script.js` once had a whole debugging session chasing code the browser wasn't
+  running.
+
+  If you ever do need to renumber, only ever go **up**. Lowering a version means a browser
+  holding the higher one keeps serving it.
 
 - Number formatting uses standard 3-digit commas (`1,500,000`), not Indian lakh/crore
   grouping (`15,00,000`) — this was flagged as an open question, not yet changed.

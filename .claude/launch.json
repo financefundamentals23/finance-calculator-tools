@@ -4,7 +4,10 @@
     {
       "name": "static-site",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8000"],
+      "runtimeArgs": [
+        ".claude/devserver.py",
+        "8000"
+      ],
       "port": 8000
     }
   ]
