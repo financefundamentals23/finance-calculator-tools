@@ -93,19 +93,53 @@ function init(canvas, host) {
   const camera = new THREE.PerspectiveCamera(28, 1, 0.5, 400);
   const lookAt = new THREE.Vector3(0, 1.9, 0);
   const camDir = new THREE.Vector3(1, 0.82, 1).normalize();
-  const FIT_WIDTH = 13.6;   // diorama plus breathing room on both sides
-  let camDist = 40;
+  /* The diorama's eight bounding-box corners, measured once the room is built.
+     Fitting against the projected corners is exact — a bounding sphere is far
+     too generous for a wide flat room and leaves it looking shrunken, while
+     fitting width alone (the earlier approach) let the model overflow and run
+     over the hint text on a wide screen. */
+  const corners = [];
+  const UP = new THREE.Vector3(0, 1, 0);
+  const SPIN_LIMIT = 0.30;   // drift amplitude; the fit is solved across it
+  let camDist = 40, fitDepth = 8;
+
+  // Distance at which every corner sits inside the frustum, for one orbit angle.
+  function distanceFor(spin, vFov, hFov) {
+    const d = camDir.clone().applyAxisAngle(UP, spin);
+    const right = new THREE.Vector3().crossVectors(UP, d).normalize();
+    const up = new THREE.Vector3().crossVectors(d, right).normalize();
+    let halfW = 0, halfH = 0, depth = 0;
+    for (const c of corners) {
+      const v = c.clone().sub(lookAt);
+      halfW = Math.max(halfW, Math.abs(v.dot(right)));
+      halfH = Math.max(halfH, Math.abs(v.dot(up)));
+      depth = Math.max(depth, Math.abs(v.dot(d)));
+    }
+    fitDepth = depth;
+    /* Push back a fraction of the model's half-depth, because the near face sits
+       closer than the centre and projects larger. Only a fraction: this is a 28
+       degree lens, so the perspective spread is mild, and compensating for the
+       full depth leaves the diorama looking shrunken in its panel. */
+    return Math.max(halfW / Math.tan(hFov / 2), halfH / Math.tan(vFov / 2)) * 1.02
+           + depth * 0.38;
+  }
 
   function frameCamera() {
     const vFov = camera.fov * Math.PI / 180;
     const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
-    camDist = Math.min(220, Math.max(18, (FIT_WIDTH / 2) / Math.tan(hFov / 2)));
+    // The room orbits, so fit the worst case across the drift's full range.
+    const need = Math.max(
+      distanceFor(-SPIN_LIMIT, vFov, hFov),
+      distanceFor(0, vFov, hFov),
+      distanceFor(SPIN_LIMIT, vFov, hFov)
+    );
+    camDist = Math.min(220, Math.max(14, need));
     /* Clip planes follow the solved distance. A long lens puts the camera tens
        of units out, and a fixed 0.5/400 range gives a near:far ratio around 800
        — far too little depth precision for the AO pass to read, which tanks
        both quality and frame rate. */
-    camera.near = Math.max(0.5, camDist - 22);
-    camera.far = camDist + 34;
+    camera.near = Math.max(0.5, camDist - fitDepth * 2.2);
+    camera.far = camDist + fitDepth * 2.2;
     camera.updateProjectionMatrix();
   }
   function placeCamera(spin) {
@@ -391,6 +425,17 @@ function init(canvas, host) {
     if (t) t.run();
   });
 
+  /* Now that every prop is in place, measure what the camera has to frame. */
+  {
+    const bounds = new THREE.Box3().setFromObject(room);
+    // Aim at the model's real centre rather than a hand-guessed height.
+    bounds.getCenter(lookAt);
+    for (const x of [bounds.min.x, bounds.max.x])
+      for (const y of [bounds.min.y, bounds.max.y])
+        for (const z of [bounds.min.z, bounds.max.z])
+          corners.push(new THREE.Vector3(x, y, z));
+  }
+
   /* -------------------------------------------------- ambient occlusion pass */
   let composer = null;
   function buildComposer(w, h) {
@@ -451,7 +496,7 @@ function init(canvas, host) {
          hides everything inside. The sign-in diorama oscillates between limits
          for the same reason. */
       phase += dt * 0.00009;
-      spin = Math.sin(phase) * 0.30;
+      spin = Math.sin(phase) * SPIN_LIMIT;
       placeCamera(spin);
     }
     if (composer) composer.render(); else renderer.render(scene, camera);

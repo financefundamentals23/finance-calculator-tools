@@ -125,10 +125,12 @@
   <div id="gatedContent">
   <div class="details-split">
     <div class="details-illustration" aria-hidden="true">
-      <!-- Interior view of the same world as the sign-in diorama, built from
-           primitives at runtime in details-scene.js. Transparent canvas, so the
-           panel gradient below stays the fallback if WebGL is unavailable. -->
+      <!-- Compact room diorama, built from primitives at runtime in
+           details-scene.js. Both the canvas and this panel are transparent, so
+           the page background runs unbroken across the split — and if WebGL is
+           unavailable the column simply reads as empty page. -->
       <canvas id="detailsCanvas"></canvas>
+      <p class="scene-hint">Click the lamp for light, or the cupboard for your savings.</p>
     </div>
 
   <main>
@@ -177,6 +179,7 @@
         <button class="reset" onclick="clearProfileDetails()">Clear all</button>
       </div>
 
+      <p class="profile-saved" id="profileSaved"></p>
       <p class="profile-status" id="profileStatus"></p>
     </div>
 

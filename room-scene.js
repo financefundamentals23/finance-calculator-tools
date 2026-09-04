@@ -86,8 +86,9 @@ function init(canvas, host) {
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
   controls.enablePan = false;
-  controls.minDistance = 26;
-  controls.maxDistance = 50;
+  // Recomputed on every resize by fitDistance(); these are just safe starters.
+  controls.minDistance = 20;
+  controls.maxDistance = 60;
   // The default view sits at polar ~1.15; this range lets it tilt a little
   // either way without ever reaching an overhead floor-plan or a flat
   // ground-level view.
@@ -472,6 +473,59 @@ function init(canvas, host) {
     return t;
   }
 
+  /* --------------------------------------------------------------- framing
+     The camera distance was fixed, so on a narrow panel the diorama spilled off
+     every edge and on a wide one it floated small. Fit it to the model's own
+     bounding-box corners instead, sampled across the full range the camera can
+     reach — the drift sweeps the azimuth and the visitor can tilt the polar
+     angle, and the model has to stay in frame throughout. */
+  const fitCorners = [];
+  {
+    const bounds = new THREE.Box3().setFromObject(room);
+    /* Orbit around — and frame against — the model's real centre. The target was
+       a hand-set (0, 2, 0), which left the diorama sitting above centre in the
+       panel once the fit started framing around it. */
+    bounds.getCenter(controls.target);
+    controls.update();
+    for (const x of [bounds.min.x, bounds.max.x])
+      for (const y of [bounds.min.y, bounds.max.y])
+        for (const z of [bounds.min.z, bounds.max.z])
+          fitCorners.push(new THREE.Vector3(x, y, z));
+  }
+
+  const FIT_DIR = new THREE.Vector3();
+  function distanceForDir(dir, vFov, hFov) {
+    const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
+    const up = new THREE.Vector3().crossVectors(dir, right).normalize();
+    let halfW = 0, halfH = 0, depth = 0;
+    for (const c of fitCorners) {
+      const v = c.clone().sub(controls.target);
+      halfW = Math.max(halfW, Math.abs(v.dot(right)));
+      halfH = Math.max(halfH, Math.abs(v.dot(up)));
+      depth = Math.max(depth, Math.abs(v.dot(dir)));
+    }
+    return Math.max(halfW / Math.tan(hFov / 2), halfH / Math.tan(vFov / 2)) * 1.02
+           + depth * 0.38;
+  }
+
+  function fitDistance() {
+    const vFov = camera.fov * Math.PI / 180;
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    let need = 0;
+    // Worst case across the azimuth the drift sweeps and the polar tilt allowed.
+    for (const theta of [DRIFT_MIN, 0.5, 0.785, 1.05, DRIFT_MAX]) {
+      for (const phi of [controls.minPolarAngle, 1.1, controls.maxPolarAngle]) {
+        FIT_DIR.set(
+          Math.sin(phi) * Math.sin(theta),
+          Math.cos(phi),
+          Math.sin(phi) * Math.cos(theta)
+        ).normalize();
+        need = Math.max(need, distanceForDir(FIT_DIR, vFov, hFov));
+      }
+    }
+    return need;
+  }
+
   /* ------------------------------------------------------------ theme sync */
   // The model keeps its brand colours in both themes; only the lighting shifts,
   // so the diorama sits correctly on a white panel or a navy one.
@@ -495,6 +549,19 @@ function init(canvas, host) {
     if (!w || !h) return false;
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+
+    /* Re-seat the camera at the fitted distance along whatever direction it is
+       currently looking from, so a resize never crops the model and never
+       disturbs the angle the visitor (or the drift) left it at. */
+    const dist = fitDistance();
+    controls.minDistance = dist;
+    controls.maxDistance = dist * 1.5;
+    const dir = camera.position.clone().sub(controls.target);
+    if (dir.lengthSq() > 0) {
+      camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(dist));
+    }
+    controls.update();
+
     renderer.setSize(w, h, false);
     if (composer) composer.setSize(w, h);
     return true;

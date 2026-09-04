@@ -624,6 +624,27 @@ function getProfileDocRef(){
   return db.collection('profiles').doc(user.uid);
 }
 
+// The save has always written an updatedAt; until now nothing read it back, so
+// the page gave no sign your figures were actually stored.
+function setProfileSavedAt(date){
+  const el = document.getElementById('profileSaved');
+  if(!el) return;
+  if(!date){
+    el.textContent = '';
+    el.classList.remove('show');
+    return;
+  }
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  const time = date.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+  const day = date.toLocaleDateString(undefined, {
+    day:'numeric', month:'long',
+    year: date.getFullYear() === now.getFullYear() ? undefined : 'numeric'
+  });
+  el.textContent = sameDay ? ('Last saved today at ' + time) : ('Last saved ' + day);
+  el.classList.add('show');
+}
+
 function setProfileStatus(message, isError){
   const el = document.getElementById('profileStatus');
   if(!el) return;
@@ -642,11 +663,16 @@ function loadProfileDetails(){
       const input = document.getElementById(PROFILE_INPUT_PREFIX + key);
       if(input) input.value = '';
     });
+    setProfileSavedAt(null);
     return;
   }
 
   ref.get().then(function(doc){
-    const data = doc.exists ? (doc.data().details || {}) : {};
+    const raw = doc.exists ? doc.data() : {};
+    const data = raw.details || {};
+    // Firestore hands back a Timestamp; toDate() may be absent on a write that
+    // hasn't round-tripped through the server yet.
+    setProfileSavedAt(raw.updatedAt && raw.updatedAt.toDate ? raw.updatedAt.toDate() : null);
     PROFILE_FIELDS.forEach(function(key){
       const input = document.getElementById(PROFILE_INPUT_PREFIX + key);
       if(!input) return;
@@ -698,6 +724,7 @@ function saveProfileDetails(){
     setProfileStatus(anyFilled
       ? 'Saved — your calculators will fill these in from now on.'
       : 'Saved — nothing will be prefilled.');
+    setProfileSavedAt(new Date());
     if(btn) btn.disabled = false;
   }).catch(function(err){
     console.error('Failed to save details:', err);

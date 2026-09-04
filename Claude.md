@@ -138,6 +138,16 @@ desk's coin stack was removed when it arrived, so the money reads as one idea in
 rather than scattered decoration. Keep that discipline when adding props: the room is 9x9
 and reads as clutter quickly.
 
+**Both split panels — sign-in and My details — are transparent**, canvas included, so the
+page background runs unbroken across the split. Giving a panel its own colour puts a hard
+seam down the middle and the page reads as two unrelated halves rather than one screen.
+
+**Both cameras fit the model to the panel** rather than sitting at a fixed distance
+(`fitDistance()` in `room-scene.js`, `frameCamera()` in `details-scene.js`). A fixed
+distance crops the diorama on a narrow panel and leaves it floating small on a wide one.
+Both orbit around the model's measured bounding-box centre — a hand-set target leaves the
+model off-centre once the fit frames around it.
+
 **Two objects in the details room are clickable**: the floor lamp toggles the site theme,
 and the cupboard focuses the Liquid savings field and flashes it. Both are deliberately
 *redundant* — the theme toggle is in the nav and the field is right there on the page — so
@@ -162,10 +172,13 @@ Three things that bite if you change them:
 - **Lighting is set in two places.** `applyTheme()` writes `ambient`/`hemi` intensities on
   every theme change, so editing the values at light-creation time alone does nothing —
   `applyTheme` silently overwrites them. Change both.
-- **`details-scene.js` solves its camera distance from the panel's aspect ratio**
-  (`frameCamera()`), because the details column is extremely portrait and any fixed
-  distance crops badly. Fog is derived from that same distance, so the two can't drift
-  apart and fog the scene to black.
+- **`details-scene.js` solves its camera distance from the model's own bounding-box
+  corners** (`frameCamera()` / `distanceFor()`), fitting whichever of width or height is
+  tighter and checking the worst case across the drift's full range. Fitting by width
+  alone works on a portrait panel and then lets the diorama overflow on a wide screen,
+  where it runs over the hint text; a bounding *sphere* fits everywhere but leaves a wide
+  flat room looking shrunken. `SPIN_LIMIT` is shared by the fit and the drift so the two
+  can't disagree.
 
 A full-bleed immersive backdrop was built for My details and rejected — it competed with
 the form. The page uses the same 50/50 split as sign-in.

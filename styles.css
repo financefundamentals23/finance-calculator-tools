@@ -427,10 +427,13 @@
   }
   .auth-split .auth-gate-inner .card{max-width:420px;}
 
-  /* The panel gradient lives here rather than in the artwork, so it doubles as
-     the fallback if the 3D canvas never initialises. */
+  /* Transparent, matching the My details page. Giving this panel its own colour
+     puts a hard seam down the middle and the page reads as two unrelated halves
+     rather than one screen; the canvas is transparent too, so the body's own
+     background runs straight across. If WebGL never initialises the column just
+     reads as empty page. */
   .auth-split .auth-illustration{
-    background:linear-gradient(155deg, var(--navy-800) 0%, var(--navy-700) 100%);
+    background:transparent;
   }
   .auth-illustration canvas{
     position:absolute;
@@ -845,8 +848,28 @@
     align-self:start;
     height:calc(100vh - var(--topnav-h));
     overflow:hidden;
-    background:linear-gradient(155deg, var(--navy-800) 0%, var(--navy-700) 100%);
+    /* Transparent, not a panel colour. The canvas itself is transparent, so the
+       body's own background — radial accents included — runs unbroken across
+       both columns and there is no seam down the middle of the page. */
+    background:transparent;
   }
+  /* Sits inside the aria-hidden panel on purpose: it describes two mouse-only
+     shortcuts that both have DOM equivalents elsewhere, so there is nothing here
+     a screen-reader user is missing. */
+  .scene-hint{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:26px;
+    margin:0;
+    padding:0 24px;
+    text-align:center;
+    font-size:0.75rem;
+    color:var(--ink-300);
+    opacity:0.72;
+    pointer-events:none;
+  }
+
   .details-illustration canvas{
     position:absolute;
     inset:0;
@@ -1410,6 +1433,17 @@
   .profile-intro{
     margin-bottom:22px;
   }
+
+  /* Reads the updatedAt the save has always written. Present whenever there is
+     a stored figure, so the page shows it is actually holding something. */
+  .profile-saved{
+    display:none;
+    margin-top:14px;
+    font-size:0.75rem;
+    color:var(--ink-300);
+    text-align:center;
+  }
+  .profile-saved.show{display:block;}
 
   .profile-status{
     display:none;
